@@ -278,3 +278,12 @@ public expect fun Char.isLowerCase(): Boolean
  * @sample samples.text.Chars.isTitleCase
  */
 public expect fun Char.isTitleCase(): Boolean
+
+/**
+ * Returns `true` if this character is an ISO control character.
+ *
+ * A character is considered to be an ISO control character if its code is in the range `'\u0000'..'\u001F'` or in the range `'\u007F'..'\u009F'`.
+ *
+ * @sample samples.text.Chars.isISOControl
+ */
+public expect fun Char.isISOControl(): Boolean
