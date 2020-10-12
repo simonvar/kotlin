@@ -227,3 +227,54 @@ public fun Char.equals(other: Char, ignoreCase: Boolean = false): Boolean {
  * Returns `true` if this character is a Unicode surrogate code unit.
  */
 public fun Char.isSurrogate(): Boolean = this in Char.MIN_SURROGATE..Char.MAX_SURROGATE
+
+/**
+ * Return a Unicode category of this character as an Int.
+ */
+internal expect fun Char.getCategoryValue(): Int
+
+/**
+ * Returns a value indicating a character's general category.
+ */
+public val Char.category: CharCategory get() = CharCategory.valueOf(getCategoryValue())
+
+/**
+ * Returns `true` if this character (Unicode code point) is defined in Unicode.
+ */
+public expect fun Char.isDefined(): Boolean
+
+/**
+ * Returns `true` if this character is a letter.
+ * @sample samples.text.Chars.isLetter
+ */
+public expect fun Char.isLetter(): Boolean
+
+/**
+ * Returns `true` if this character is a letter or digit.
+ * @sample samples.text.Chars.isLetterOrDigit
+ */
+public expect fun Char.isLetterOrDigit(): Boolean
+
+/**
+ * Returns `true` if this character (Unicode code point) is a digit.
+ * @sample samples.text.Chars.isDigit
+ */
+public expect fun Char.isDigit(): Boolean
+
+/**
+ * Returns `true` if this character is upper case.
+ * @sample samples.text.Chars.isUpperCase
+ */
+public expect fun Char.isUpperCase(): Boolean
+
+/**
+ * Returns `true` if this character is lower case.
+ * @sample samples.text.Chars.isLowerCase
+ */
+public expect fun Char.isLowerCase(): Boolean
+
+/**
+ * Returns `true` if this character is a titlecase character.
+ * @sample samples.text.Chars.isTitleCase
+ */
+public expect fun Char.isTitleCase(): Boolean
