@@ -38,7 +38,7 @@ task run(type: JavaExec) {
 
 task generateUnicodeData(type: JavaExec) {
     group 'application'
-    main 'generators.GenerateUnicodeDataKt'
+    main 'generators.unicode.GenerateUnicodeDataKt'
     classpath sourceSets.main.runtimeClasspath
     args = ["${rootDir}"]
 }
