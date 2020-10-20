@@ -93,48 +93,70 @@ public actual fun Char.isHighSurrogate(): Boolean = this in Char.MIN_HIGH_SURROG
 public actual fun Char.isLowSurrogate(): Boolean = this in Char.MIN_LOW_SURROGATE..Char.MAX_LOW_SURROGATE
 
 /**
- * Return a Unicode category of this character as an Int.
+ * Returns the Unicode general category of this character as an Int.
  */
 @kotlin.internal.InlineOnly
 internal actual inline fun Char.getCategoryValue(): Int = getCategoryValue(this.toInt())
 
 /**
  * Returns `true` if this character (Unicode code point) is defined in Unicode.
+ *
+ * A character is considered to be defined in Unicode if its [category] is not [CharCategory.UNASSIGNED].
  */
 public actual fun Char.isDefined(): Boolean = getCategoryValue() != CharCategory.UNASSIGNED.value
 
 /**
  * Returns `true` if this character is a letter.
+ *
+ * A character is considered to be a letter if its [category] is [CharCategory.UPPERCASE_LETTER],
+ * [CharCategory.LOWERCASE_LETTER], [CharCategory.TITLECASE_LETTER], [CharCategory.MODIFIER_LETTER], or [CharCategory.OTHER_LETTER].
+ *
  * @sample samples.text.Chars.isLetter
  */
 public actual fun Char.isLetter(): Boolean = getCategoryValue() in CharCategory.UPPERCASE_LETTER.value..CharCategory.OTHER_LETTER.value
 
 /**
  * Returns `true` if this character is a letter or digit.
+ *
+ * @see isLetter
+ * @see isDigit
+ *
  * @sample samples.text.Chars.isLetterOrDigit
  */
 public actual fun Char.isLetterOrDigit(): Boolean = isLetter() || isDigit()
 
 /**
- * Returns `true` if this character (Unicode code point) is a digit.
+ * Returns `true` if this character is a digit.
+ *
+ * A character is considered to be a digit if its [category] is [CharCategory.DECIMAL_DIGIT_NUMBER].
+ *
  * @sample samples.text.Chars.isDigit
  */
 public actual fun Char.isDigit(): Boolean = getCategoryValue() == CharCategory.DECIMAL_DIGIT_NUMBER.value
 
 /**
- * Returns `true` if this character is upper case.
+ * Returns `true` if this character is an upper case letter.
+ *
+ * A character is considered to be an upper case letter if its [category] is [CharCategory.UPPERCASE_LETTER].
+ *
  * @sample samples.text.Chars.isUpperCase
  */
 public actual fun Char.isUpperCase(): Boolean = getCategoryValue() == CharCategory.UPPERCASE_LETTER.value
 
 /**
- * Returns `true` if this character is lower case.
+ * Returns `true` if this character is a lower case letter.
+ *
+ * A character is considered to be a lower case letter if its [category] is [CharCategory.LOWERCASE_LETTER].
+ *
  * @sample samples.text.Chars.isLowerCase
  */
 public actual fun Char.isLowerCase(): Boolean = getCategoryValue() == CharCategory.LOWERCASE_LETTER.value
 
 /**
- * Returns `true` if this character is a titlecase character.
+ * Returns `true` if this character is a title case letter.
+ *
+ * A character is considered to be a title case letter if its [category] is [CharCategory.TITLECASE_LETTER].
+ *
  * @sample samples.text.Chars.isTitleCase
  */
 public actual fun Char.isTitleCase(): Boolean = getCategoryValue() == CharCategory.TITLECASE_LETTER.value
@@ -142,7 +164,7 @@ public actual fun Char.isTitleCase(): Boolean = getCategoryValue() == CharCatego
 /**
  * Returns `true` if this character is an ISO control character.
  *
- * A character is considered to be an ISO control character if its code is in the range `'\u0000'..'\u001F'` or in the range `'\u007F'..'\u009F'`.
+ * A character is considered to be an ISO control character if its [category] is [CharCategory.CONTROL].
  *
  * @sample samples.text.Chars.isISOControl
  */

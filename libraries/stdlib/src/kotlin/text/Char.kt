@@ -229,52 +229,74 @@ public fun Char.equals(other: Char, ignoreCase: Boolean = false): Boolean {
 public fun Char.isSurrogate(): Boolean = this in Char.MIN_SURROGATE..Char.MAX_SURROGATE
 
 /**
- * Return a Unicode category of this character as an Int.
+ * Returns the Unicode general category of this character as an Int.
  */
 internal expect fun Char.getCategoryValue(): Int
 
 /**
- * Returns a value indicating a character's general category.
+ * Returns the Unicode general category of this character.
  */
 public val Char.category: CharCategory get() = CharCategory.valueOf(getCategoryValue())
 
 /**
  * Returns `true` if this character (Unicode code point) is defined in Unicode.
+ *
+ * A character is considered to be defined in Unicode if its [category] is not [CharCategory.UNASSIGNED].
  */
 public expect fun Char.isDefined(): Boolean
 
 /**
  * Returns `true` if this character is a letter.
+ *
+ * A character is considered to be a letter if its [category] is [CharCategory.UPPERCASE_LETTER],
+ * [CharCategory.LOWERCASE_LETTER], [CharCategory.TITLECASE_LETTER], [CharCategory.MODIFIER_LETTER], or [CharCategory.OTHER_LETTER].
+ *
  * @sample samples.text.Chars.isLetter
  */
 public expect fun Char.isLetter(): Boolean
 
 /**
  * Returns `true` if this character is a letter or digit.
+ *
+ * @see isLetter
+ * @see isDigit
+ *
  * @sample samples.text.Chars.isLetterOrDigit
  */
 public expect fun Char.isLetterOrDigit(): Boolean
 
 /**
- * Returns `true` if this character (Unicode code point) is a digit.
+ * Returns `true` if this character is a digit.
+ *
+ * A character is considered to be a digit if its [category] is [CharCategory.DECIMAL_DIGIT_NUMBER].
+ *
  * @sample samples.text.Chars.isDigit
  */
 public expect fun Char.isDigit(): Boolean
 
 /**
- * Returns `true` if this character is upper case.
+ * Returns `true` if this character is an upper case letter.
+ *
+ * A character is considered to be an upper case letter if its [category] is [CharCategory.UPPERCASE_LETTER].
+ *
  * @sample samples.text.Chars.isUpperCase
  */
 public expect fun Char.isUpperCase(): Boolean
 
 /**
- * Returns `true` if this character is lower case.
+ * Returns `true` if this character is a lower case letter.
+ *
+ * A character is considered to be a lower case letter if its [category] is [CharCategory.LOWERCASE_LETTER].
+ *
  * @sample samples.text.Chars.isLowerCase
  */
 public expect fun Char.isLowerCase(): Boolean
 
 /**
- * Returns `true` if this character is a titlecase character.
+ * Returns `true` if this character is a title case letter.
+ *
+ * A character is considered to be a title case letter if its [category] is [CharCategory.TITLECASE_LETTER].
+ *
  * @sample samples.text.Chars.isTitleCase
  */
 public expect fun Char.isTitleCase(): Boolean
@@ -282,7 +304,7 @@ public expect fun Char.isTitleCase(): Boolean
 /**
  * Returns `true` if this character is an ISO control character.
  *
- * A character is considered to be an ISO control character if its code is in the range `'\u0000'..'\u001F'` or in the range `'\u007F'..'\u009F'`.
+ * A character is considered to be an ISO control character if its [category] is [CharCategory.CONTROL].
  *
  * @sample samples.text.Chars.isISOControl
  */

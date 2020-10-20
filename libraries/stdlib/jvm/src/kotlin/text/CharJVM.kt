@@ -11,19 +11,25 @@ package kotlin.text
 import java.util.Locale
 
 /**
- * Return a Unicode category of this character as an Int.
+ * Returns the Unicode general category of this character as an Int.
  */
 @kotlin.internal.InlineOnly
 internal actual inline fun Char.getCategoryValue(): Int = Character.getType(this)
 
 /**
  * Returns `true` if this character (Unicode code point) is defined in Unicode.
+ *
+ * A character is considered to be defined in Unicode if its [category] is not [CharCategory.UNASSIGNED].
  */
 @kotlin.internal.InlineOnly
 public actual inline fun Char.isDefined(): Boolean = Character.isDefined(this)
 
 /**
  * Returns `true` if this character is a letter.
+ *
+ * A character is considered to be a letter if its [category] is [CharCategory.UPPERCASE_LETTER],
+ * [CharCategory.LOWERCASE_LETTER], [CharCategory.TITLECASE_LETTER], [CharCategory.MODIFIER_LETTER], or [CharCategory.OTHER_LETTER].
+ *
  * @sample samples.text.Chars.isLetter
  */
 @kotlin.internal.InlineOnly
@@ -31,13 +37,20 @@ public actual inline fun Char.isLetter(): Boolean = Character.isLetter(this)
 
 /**
  * Returns `true` if this character is a letter or digit.
+ *
+ * @see isLetter
+ * @see isDigit
+ *
  * @sample samples.text.Chars.isLetterOrDigit
  */
 @kotlin.internal.InlineOnly
 public actual inline fun Char.isLetterOrDigit(): Boolean = Character.isLetterOrDigit(this)
 
 /**
- * Returns `true` if this character (Unicode code point) is a digit.
+ * Returns `true` if this character is a digit.
+ *
+ * A character is considered to be a digit if its [category] is [CharCategory.DECIMAL_DIGIT_NUMBER].
+ *
  * @sample samples.text.Chars.isDigit
  */
 @kotlin.internal.InlineOnly
@@ -54,7 +67,7 @@ public inline fun Char.isIdentifierIgnorable(): Boolean = Character.isIdentifier
 /**
  * Returns `true` if this character is an ISO control character.
  *
- * A character is considered to be an ISO control character if its code is in the range `'\u0000'..'\u001F'` or in the range `'\u007F'..'\u009F'`.
+ * A character is considered to be an ISO control character if its [category] is [CharCategory.CONTROL].
  *
  * @sample samples.text.Chars.isISOControl
  */
