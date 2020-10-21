@@ -103,7 +103,12 @@ internal actual inline fun Char.getCategoryValue(): Int = getCategoryValue(this.
  *
  * A character is considered to be defined in Unicode if its [category] is not [CharCategory.UNASSIGNED].
  */
-public actual fun Char.isDefined(): Boolean = getCategoryValue() != CharCategory.UNASSIGNED.value
+public actual fun Char.isDefined(): Boolean {
+    if (this < '\u0080') {
+        return true
+    }
+    return getCategoryValue() != CharCategory.UNASSIGNED.value
+}
 
 /**
  * Returns `true` if this character is a letter.
@@ -113,7 +118,15 @@ public actual fun Char.isDefined(): Boolean = getCategoryValue() != CharCategory
  *
  * @sample samples.text.Chars.isLetter
  */
-public actual fun Char.isLetter(): Boolean = getCategoryValue() in CharCategory.UPPERCASE_LETTER.value..CharCategory.OTHER_LETTER.value
+public actual fun Char.isLetter(): Boolean {
+    if (this in 'a'..'z' || this in 'A'..'Z') {
+        return true
+    }
+    if (this < '\u0080') {
+        return false
+    }
+    return getCategoryValue() in CharCategory.UPPERCASE_LETTER.value..CharCategory.OTHER_LETTER.value
+}
 
 /**
  * Returns `true` if this character is a letter or digit.
@@ -123,7 +136,18 @@ public actual fun Char.isLetter(): Boolean = getCategoryValue() in CharCategory.
  *
  * @sample samples.text.Chars.isLetterOrDigit
  */
-public actual fun Char.isLetterOrDigit(): Boolean = isLetter() || isDigit()
+public actual fun Char.isLetterOrDigit(): Boolean {
+    if (this in 'a'..'z' || this in 'A'..'Z' || this in '0'..'9') {
+        return true
+    }
+    if (this < '\u0080') {
+        return false
+    }
+
+    val categoryValue = getCategoryValue()
+    return categoryValue == CharCategory.DECIMAL_DIGIT_NUMBER.value
+            || categoryValue in CharCategory.UPPERCASE_LETTER.value..CharCategory.OTHER_LETTER.value
+}
 
 /**
  * Returns `true` if this character is a digit.
@@ -132,7 +156,15 @@ public actual fun Char.isLetterOrDigit(): Boolean = isLetter() || isDigit()
  *
  * @sample samples.text.Chars.isDigit
  */
-public actual fun Char.isDigit(): Boolean = getCategoryValue() == CharCategory.DECIMAL_DIGIT_NUMBER.value
+public actual fun Char.isDigit(): Boolean {
+    if (this in '0'..'9') {
+        return true
+    }
+    if (this < '\u0080') {
+        return false
+    }
+    return getCategoryValue() == CharCategory.DECIMAL_DIGIT_NUMBER.value
+}
 
 /**
  * Returns `true` if this character is an upper case letter.
@@ -141,7 +173,15 @@ public actual fun Char.isDigit(): Boolean = getCategoryValue() == CharCategory.D
  *
  * @sample samples.text.Chars.isUpperCase
  */
-public actual fun Char.isUpperCase(): Boolean = getCategoryValue() == CharCategory.UPPERCASE_LETTER.value
+public actual fun Char.isUpperCase(): Boolean {
+    if (this in 'A'..'Z') {
+        return true
+    }
+    if (this < '\u0080') {
+        return false
+    }
+    return getCategoryValue() == CharCategory.UPPERCASE_LETTER.value
+}
 
 /**
  * Returns `true` if this character is a lower case letter.
@@ -150,7 +190,15 @@ public actual fun Char.isUpperCase(): Boolean = getCategoryValue() == CharCatego
  *
  * @sample samples.text.Chars.isLowerCase
  */
-public actual fun Char.isLowerCase(): Boolean = getCategoryValue() == CharCategory.LOWERCASE_LETTER.value
+public actual fun Char.isLowerCase(): Boolean {
+    if (this in 'a'..'z') {
+        return true
+    }
+    if (this < '\u0080') {
+        return false
+    }
+    return getCategoryValue() == CharCategory.LOWERCASE_LETTER.value
+}
 
 /**
  * Returns `true` if this character is a title case letter.
@@ -159,7 +207,12 @@ public actual fun Char.isLowerCase(): Boolean = getCategoryValue() == CharCatego
  *
  * @sample samples.text.Chars.isTitleCase
  */
-public actual fun Char.isTitleCase(): Boolean = getCategoryValue() == CharCategory.TITLECASE_LETTER.value
+public actual fun Char.isTitleCase(): Boolean {
+    if (this < '\u0080') {
+        return false
+    }
+    return getCategoryValue() == CharCategory.TITLECASE_LETTER.value
+}
 
 /**
  * Returns `true` if this character is an ISO control character.
