@@ -22,7 +22,7 @@ fun main(args: Array<String>) {
 
             unicodeDataFile = baseDir.resolve("libraries/tools/kotlin-stdlib-gen/src/generators/unicode/UnicodeData.txt")
 
-            val categoryTestFile = baseDir.resolve("libraries/stdlib/test/text/unicodeData/_CharCategoryTest.kt")
+            val categoryTestFile = baseDir.resolve("libraries/stdlib/js/test/text/unicodeData/_CharCategoryTest.kt")
             val categoryTestGenerator = CharCategoryTestGenerator(categoryTestFile)
 
             val jsCategoryRangesFile = baseDir.resolve("libraries/stdlib/js/src/generated/_CharCategories.kt")
@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
         else -> {
             println(
                 """Parameters:
-    <kotlin-base-dir> - generates UnicodeData.txt sources for common, jvm, js, ir-js targets using paths derived from specified base path
+    <kotlin-base-dir> - generates UnicodeData.txt sources for js and js-ir targets using paths derived from specified base path
     <UnicodeData.txt-path> <target> <target-dir> - generates UnicodeData.txt sources for the specified target in the specified target directory
 """
             )

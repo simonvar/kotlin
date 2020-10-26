@@ -99,7 +99,7 @@ class CharCategoryTest {
             assertEquals(
                 expected = expectedCategoryCode,
                 actual = char.category.code,
-                "Char:[${"$"}char] with code:[${"$"}charCode] in Unicode and has category [${"$"}expectedCategoryCode], but in Kotlin [${"$"}{char.category.code}]"
+                "Char:[${"$"}char] with code:[${"$"}charCode] has category [${"$"}expectedCategoryCode] in Unicode, but [${"$"}{char.category.code}] in Kotlin"
             )
         }
     }
