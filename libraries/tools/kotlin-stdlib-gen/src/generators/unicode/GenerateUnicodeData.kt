@@ -12,6 +12,17 @@ import java.io.File
 import java.io.FileNotFoundException
 import kotlin.system.exitProcess
 
+/**
+ * This program generates sources related to UnicodeData.txt.
+ * There are two ways to run the program.
+ * 1. Pass the root directory of the project to generate sources for js and js-ir.
+ *  _CharCategoryTest.kt and supporting files are also generated to test the generated sources.
+ *  The UnicodeData.txt file must be placed in the same directory where this file is localed,
+ *  i.e., rootDir/libraries/tools/kotlin-stdlib-gen/src/generators/unicode/
+ *  The generated test is meant to be run after updating Unicode version and should not be merged to master.
+ * 2. Pass the path to the UnicodeData.txt, name of the target to generate sources for, and the directory to generate sources in.
+ *  No tests are generated.
+ */
 fun main(args: Array<String>) {
     val unicodeDataFile: File
     val generators = mutableListOf<UnicodeDataGenerator>()
