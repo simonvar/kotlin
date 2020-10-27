@@ -229,14 +229,9 @@ public fun Char.equals(other: Char, ignoreCase: Boolean = false): Boolean {
 public fun Char.isSurrogate(): Boolean = this in Char.MIN_SURROGATE..Char.MAX_SURROGATE
 
 /**
- * Returns the Unicode general category of this character as an Int.
- */
-internal expect fun Char.getCategoryValue(): Int
-
-/**
  * Returns the Unicode general category of this character.
  */
-public val Char.category: CharCategory get() = CharCategory.valueOf(getCategoryValue())
+public expect val Char.category: CharCategory
 
 /**
  * Returns `true` if this character (Unicode code point) is defined in Unicode.

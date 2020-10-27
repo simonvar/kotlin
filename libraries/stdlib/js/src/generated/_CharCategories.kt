@@ -230,7 +230,11 @@ private fun binarySearchRange(array: IntArray, needle: Int): Int {
     return middle - (if (needle < value) 1 else 0)
 }
 
-internal fun getCategoryValue(ch: Int): Int {
+/**
+ * Returns the Unicode general category of this character as an Int.
+ */
+internal fun Char.getCategoryValue(): Int {
+    val ch = this.toInt()
     val index = binarySearchRange(RangesWrapper.rangeStart, ch)
     val high = RangesWrapper.rangeEnd[index]
     if (ch <= high) {

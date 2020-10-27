@@ -1259,12 +1259,9 @@ public final enum class CharCategory : kotlin.Enum<kotlin.text.CharCategory> {
 
     public final val code: kotlin.String { get; }
 
-    public final val value: kotlin.Int { get; }
-
     public final operator fun contains(char: kotlin.Char): kotlin.Boolean
 
     public companion object of CharCategory {
-        public final fun valueOf(category: kotlin.Int): kotlin.text.CharCategory
     }
 }
 

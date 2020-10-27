@@ -11,10 +11,10 @@ package kotlin.text
 import java.util.Locale
 
 /**
- * Returns the Unicode general category of this character as an Int.
+ * Returns the Unicode general category of this character.
  */
-@kotlin.internal.InlineOnly
-internal actual inline fun Char.getCategoryValue(): Int = Character.getType(this)
+public actual val Char.category: CharCategory
+    get() = CharCategory.valueOf(Character.getType(this))
 
 /**
  * Returns `true` if this character (Unicode code point) is defined in Unicode.

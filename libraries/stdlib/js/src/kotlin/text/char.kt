@@ -93,10 +93,10 @@ public actual fun Char.isHighSurrogate(): Boolean = this in Char.MIN_HIGH_SURROG
 public actual fun Char.isLowSurrogate(): Boolean = this in Char.MIN_LOW_SURROGATE..Char.MAX_LOW_SURROGATE
 
 /**
- * Returns the Unicode general category of this character as an Int.
+ * Returns the Unicode general category of this character.
  */
-@kotlin.internal.InlineOnly
-internal actual inline fun Char.getCategoryValue(): Int = getCategoryValue(this.toInt())
+public actual val Char.category: CharCategory
+    get() = CharCategory.valueOf(getCategoryValue())
 
 /**
  * Returns `true` if this character (Unicode code point) is defined in Unicode.

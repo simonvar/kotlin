@@ -132,7 +132,11 @@ internal class CharCategoryRangesGenerator(
         """.trimIndent()
 
     private fun getCategoryValue(): String = """
-        internal fun getCategoryValue(ch: Int): Int {
+        /**
+         * Returns the Unicode general category of this character as an Int.
+         */
+        internal fun Char.getCategoryValue(): Int {
+            val ch = this.toInt()
             val index = binarySearchRange(${writingStrategy.rangeReference("rangeStart")}, ch)
             val high = ${writingStrategy.rangeReference("rangeEnd[index]")}
             if (ch <= high) {
