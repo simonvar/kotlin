@@ -27,6 +27,15 @@ fun main(args: Array<String>) {
     val unicodeDataFile: File
     val generators = mutableListOf<UnicodeDataGenerator>()
 
+    fun addRangesGenerators(generatedDir: File, target: KotlinTarget) {
+        val categoryRangesGenerator = CharCategoryRangesGenerator(generatedDir.resolve("_CharCategories.kt"), target)
+        val digitRangesGenerator = DigitRangesGenerator(generatedDir.resolve("_DigitChars.kt"), target)
+        val letterRangesGenerator = LetterRangesGenerator(generatedDir.resolve("_LetterChars.kt"), target)
+        generators.add(categoryRangesGenerator)
+        generators.add(digitRangesGenerator)
+        generators.add(letterRangesGenerator)
+    }
+
     when (args.size) {
         1 -> {
             val baseDir = File(args.first())
@@ -35,16 +44,13 @@ fun main(args: Array<String>) {
 
             val categoryTestFile = baseDir.resolve("libraries/stdlib/js/test/text/unicodeData/_CharCategoryTest.kt")
             val categoryTestGenerator = CharCategoryTestGenerator(categoryTestFile)
-
-            val jsCategoryRangesFile = baseDir.resolve("libraries/stdlib/js/src/generated/_CharCategories.kt")
-            val jsCategoryRangesGenerator = CharCategoryRangesGenerator(jsCategoryRangesFile, KotlinTarget.JS)
-
-            val jsIrCategoryRangesFile = baseDir.resolve("libraries/stdlib/js-ir/src/generated/_CharCategories.kt")
-            val jsIrCategoryRangesGenerator = CharCategoryRangesGenerator(jsIrCategoryRangesFile, KotlinTarget.JS_IR)
-
             generators.add(categoryTestGenerator)
-            generators.add(jsCategoryRangesGenerator)
-            generators.add(jsIrCategoryRangesGenerator)
+
+            val jsGeneratedDir = baseDir.resolve("libraries/stdlib/js/src/generated/")
+            addRangesGenerators(jsGeneratedDir, KotlinTarget.JS)
+
+            val jsIrGeneratedDir = baseDir.resolve("libraries/stdlib/js-ir/src/generated/")
+            addRangesGenerators(jsIrGeneratedDir, KotlinTarget.JS_IR)
         }
         3 -> {
             val (unicodeDataPath, targetName, targetDir) = args
@@ -54,10 +60,7 @@ fun main(args: Array<String>) {
             val target = KotlinTarget.values.singleOrNull { it.name.equals(targetName, ignoreCase = true) }
                 ?: error("Invalid target: $targetName")
 
-            val categoryRangesFile = File(targetDir).resolve("_CharCategories.kt")
-            val categoryRangesGenerator = CharCategoryRangesGenerator(categoryRangesFile, target)
-
-            generators.add(categoryRangesGenerator)
+            addRangesGenerators(File(targetDir), target)
         }
         else -> {
             println(

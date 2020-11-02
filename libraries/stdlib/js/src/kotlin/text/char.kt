@@ -125,7 +125,7 @@ public actual fun Char.isLetter(): Boolean {
     if (this < '\u0080') {
         return false
     }
-    return getCategoryValue() in CharCategory.UPPERCASE_LETTER.value..CharCategory.OTHER_LETTER.value
+    return isLetterImpl()
 }
 
 /**
@@ -144,9 +144,7 @@ public actual fun Char.isLetterOrDigit(): Boolean {
         return false
     }
 
-    val categoryValue = getCategoryValue()
-    return categoryValue == CharCategory.DECIMAL_DIGIT_NUMBER.value
-            || categoryValue in CharCategory.UPPERCASE_LETTER.value..CharCategory.OTHER_LETTER.value
+    return isDigit() || isLetter()
 }
 
 /**
@@ -163,7 +161,7 @@ public actual fun Char.isDigit(): Boolean {
     if (this < '\u0080') {
         return false
     }
-    return getCategoryValue() == CharCategory.DECIMAL_DIGIT_NUMBER.value
+    return isDigitImpl()
 }
 
 /**

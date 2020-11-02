@@ -10,7 +10,7 @@ package kotlin.text
 // See: https://github.com/JetBrains/kotlin/tree/master/libraries/stdlib
 //
 
-private class RangesWrapper {
+private class CategoryRangesWrapper {
     companion object {
         internal val rangeStart = intArrayOf(
             0x0000, 0x0020, 0x0022, 0x0024, 0x0026, 0x0028, 0x002a, 0x002d, 0x002f, 0x0031, 0x003a, 0x003c, 0x003f, 0x0041, 0x005b, 0x005d, 0x005f, 0x0061, 0x007b, 0x007d, 
@@ -212,7 +212,7 @@ private class RangesWrapper {
     }
 }
 
-private fun binarySearchRange(array: IntArray, needle: Int): Int {
+internal fun binarySearchRange(array: IntArray, needle: Int): Int {
     var bottom = 0
     var top = array.size - 1
     var middle = -1
@@ -235,10 +235,10 @@ private fun binarySearchRange(array: IntArray, needle: Int): Int {
  */
 internal fun Char.getCategoryValue(): Int {
     val ch = this.toInt()
-    val index = binarySearchRange(RangesWrapper.rangeStart, ch)
-    val high = RangesWrapper.rangeEnd[index]
+    val index = binarySearchRange(CategoryRangesWrapper.rangeStart, ch)
+    val high = CategoryRangesWrapper.rangeEnd[index]
     if (ch <= high) {
-        val code = RangesWrapper.categoryOfRange[index]
+        val code = CategoryRangesWrapper.categoryOfRange[index]
         if (code < 0x100) {
             return code
         }
