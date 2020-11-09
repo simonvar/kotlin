@@ -77,16 +77,19 @@ internal class LetterRangesGenerator(
         writingStrategy.afterWritingRanges(this)
     }
 
-    private fun isLetterImpl(): String = """
+    private fun isLetterImpl(): String {
+        val rangeStart = writingStrategy.rangeReference("rangeStart")
+        val rangeEnd = writingStrategy.rangeReference("rangeEnd")
+        return """
         /**
          * Returns `true` if this character is a letter.
          */
         internal fun Char.isLetterImpl(): Boolean {
             val ch = this.toInt()
-            val index = binarySearchRange(LetterRangesWrapper.rangeStart, ch)
+            val index = binarySearchRange($rangeStart, ch)
 
-            val rangeStart = LetterRangesWrapper.rangeStart[index]
-            val rangeEnd = LetterRangesWrapper.rangeEnd[index]
+            val rangeStart = $rangeStart[index]
+            val rangeEnd = $rangeEnd[index]
 
             val isGapPattern = rangeEnd > 0xffff
             if (isGapPattern) {
@@ -111,6 +114,7 @@ internal class LetterRangesGenerator(
             return ch <= rangeEnd
         }
         """.trimIndent()
+    }
 }
 
 private interface RangePattern {
