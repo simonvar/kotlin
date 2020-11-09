@@ -40,7 +40,8 @@ internal class DigitRangesGenerator(
     }
 
     override fun close() {
-        // digit ranges always have length equal to 9 -> no need to generate ranges end
+        // digit ranges always have length equal to 10, so that the difference between the last char code in range and the first one is always 9.
+        // Therefore, no need to generate ranges end
         for (i in 0 until start.size) {
             check(end[i] - start[i] == 9)
         }
