@@ -144,7 +144,7 @@ public actual fun Char.isLetterOrDigit(): Boolean {
         return false
     }
 
-    return isDigit() || isLetter()
+    return isDigitImpl() || isLetterImpl()
 }
 
 /**
