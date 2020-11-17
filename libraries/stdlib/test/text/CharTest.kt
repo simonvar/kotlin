@@ -172,7 +172,7 @@ class CharTest {
         '\u002D' to "Pd",
         '(' to "Ps",    // \u0028
         ')' to "Pe",    // \u0029
-        '_' to "Pe",    // \u005F
+        '_' to "Pc",    // \u005F
         '!' to "Po",    // \u0021
         '+' to "Sm",    // \u002B
         '$' to "Sc",    // \u0024
@@ -185,7 +185,7 @@ class CharTest {
     @Test
     fun charCategory() {
         for ((char, categoryCode) in charToCategory()) {
-            assertEquals(categoryCode, char.category.code)
+            assertEquals(categoryCode, char.category.code, "char code: ${char.toInt().toString(radix = 16)}")
         }
     }
 
