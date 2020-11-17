@@ -31,9 +31,11 @@ fun main(args: Array<String>) {
         val categoryRangesGenerator = CharCategoryRangesGenerator(generatedDir.resolve("_CharCategories.kt"), target)
         val digitRangesGenerator = DigitRangesGenerator(generatedDir.resolve("_DigitChars.kt"), target)
         val letterRangesGenerator = LetterRangesGenerator(generatedDir.resolve("_LetterChars.kt"), target)
+        val whitespaceRangesGenerator = WhitespaceRangesGenerator(generatedDir.resolve("_WhitespaceChars.kt"))
         generators.add(categoryRangesGenerator)
         generators.add(digitRangesGenerator)
         generators.add(letterRangesGenerator)
+        generators.add(whitespaceRangesGenerator)
     }
 
     when (args.size) {

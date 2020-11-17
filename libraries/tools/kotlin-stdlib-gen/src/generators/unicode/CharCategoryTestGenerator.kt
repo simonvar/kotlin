@@ -119,6 +119,13 @@ class CharCategoryTest {
                 actual = char.isLetterOrDigit(),
                 "Char.isLetterOrDigit() should be true if Char.isLetter() or Char.isDigit() is true"
             )
+
+            val expectedIsWhitespace = isWhitespace(char, expectedCategoryCode)
+            assertEquals(
+                expected = expectedIsWhitespace,
+                actual = char.isWhitespace(),
+                "Char:[${"$"}char] with code:[${"$"}charCode] in Unicode has isWhitespace() = ${"$"}{expectedIsWhitespace}, but in Kotlin isWhitespace() = ${"$"}{char.isWhitespace()}"
+            )
         }
     }
 
@@ -134,6 +141,14 @@ class CharCategoryTest {
             CharCategory.MODIFIER_LETTER,
             CharCategory.OTHER_LETTER
         ).map { it.code }
+    }
+
+    private fun isWhitespace(char: Char, categoryCode: String): Boolean {
+        return categoryCode in listOf(
+            CharCategory.SPACE_SEPARATOR.code,
+            CharCategory.LINE_SEPARATOR.code,
+            CharCategory.PARAGRAPH_SEPARATOR.code
+        ) || char in '\u0009'..'\u000D' || char in '\u001C'..'\u001F'
     }
 }
             """.trimIndent()

@@ -5,8 +5,7 @@
 
 package kotlin.text
 
-// actually \s is enough to match all whitespace, but \xA0 added because of different regexp behavior of Rhino used in Selenium tests
-public actual fun Char.isWhitespace(): Boolean = toString().matches("[\\s\\xA0]")
+public actual fun Char.isWhitespace(): Boolean = isWhitespaceImpl()
 
 /**
  * Converts this character to lower case using Unicode mapping rules of the invariant locale.
