@@ -15,10 +15,13 @@ internal sealed class RangesWritingStrategy {
     abstract fun afterWritingRanges(writer: FileWriter)
     abstract fun rangeReference(name: String): String
 
+    abstract val useBase64: Boolean
+    abstract fun <E> writeRange(name: String, elements: List<E>, writer: FileWriter, transform: (E) -> Int)
+
     companion object {
-        fun of(target: KotlinTarget, wrapperName: String): RangesWritingStrategy {
+        fun of(target: KotlinTarget, wrapperName: String, useBase64: Boolean = false): RangesWritingStrategy {
             return when (target) {
-                KotlinTarget.JS, KotlinTarget.JS_IR -> JsRangesWritingStrategy(wrapperName)
+                KotlinTarget.JS, KotlinTarget.JS_IR -> JsRangesWritingStrategy(wrapperName, useBase64)
                 else -> NativeRangesWritingStrategy
             }
         }
@@ -31,16 +34,29 @@ internal object NativeRangesWritingStrategy : RangesWritingStrategy() {
     override fun beforeWritingRanges(writer: FileWriter) {}
     override fun afterWritingRanges(writer: FileWriter) {}
     override fun rangeReference(name: String): String = name
+
+    override val useBase64: Boolean get() = false
+
+    override fun <E> writeRange(name: String, elements: List<E>, writer: FileWriter, transform: (E) -> Int) =
+        writer.writeIntArray(name, elements, this, transform)
 }
 
 // see KT-42461, KT-40482
-internal class JsRangesWritingStrategy(private val wrapperName: String) : RangesWritingStrategy() {
+internal class JsRangesWritingStrategy(
+    private val wrapperName: String,
+    override val useBase64: Boolean
+) : RangesWritingStrategy() {
     override val indentation: String get() = "        " // 8 spaces
     override val rangesVisibilityModifier: String get() = "internal"
 
     override fun beforeWritingRanges(writer: FileWriter) {
         writer.appendLine("private class $wrapperName {")
         writer.appendLine("    companion object {")
+        if (useBase64) {
+            writer.appendLine("${indentation}private const val toBase64 = \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\"")
+            writer.appendLine("${indentation}internal val fromBase64 = IntArray(128).apply { toBase64.forEachIndexed { index, char -> this[char.toInt()] = index } }")
+            writer.appendLine()
+        }
     }
 
     override fun afterWritingRanges(writer: FileWriter) {
@@ -49,4 +65,10 @@ internal class JsRangesWritingStrategy(private val wrapperName: String) : Ranges
     }
 
     override fun rangeReference(name: String): String = "$wrapperName.$name"
+
+    override fun <E> writeRange(name: String, elements: List<E>, writer: FileWriter, transform: (E) -> Int) =
+        if (useBase64)
+            writer.writeIntsInBase64(name, elements, this, transform)
+        else
+            writer.writeIntArray(name, elements, this, transform)
 }

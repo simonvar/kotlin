@@ -17,7 +17,7 @@ internal class CharCategoryRangesGenerator(
     private val start = mutableListOf<Int>()
     private val end = mutableListOf<Int>()
     private val category = mutableListOf<MutableList<String?>>()
-    private val writingStrategy = RangesWritingStrategy.of(target, "CategoryRangesWrapper")
+    private val writingStrategy = RangesWritingStrategy.of(target, "CategoryRangesWrapper", useBase64 = true)
 
     init {
         outputFile.parentFile.requireExistingDir()
@@ -59,22 +59,26 @@ internal class CharCategoryRangesGenerator(
             writer.appendLine()
             writer.writeRanges()
             writer.appendLine()
-            writer.appendLine(binarySearch())
-            writer.appendLine()
+            if (writingStrategy.useBase64) {
+                writer.appendLine(binarySearch())
+                writer.appendLine()
+                writer.appendLine(intFromBase64())
+                writer.appendLine()
+            }
             writer.appendLine(getCategoryValue())
         }
     }
 
     private fun FileWriter.writeRanges() {
         writingStrategy.beforeWritingRanges(this)
-        writeIntArray("rangeStart", start, writingStrategy) { it }
+        writingStrategy.writeRange("rangeStart", start, this) { it }
         appendLine()
-        writeIntArray("rangeEnd", end, writingStrategy) { it }
+        writingStrategy.writeRange("rangeEnd", end, this) { it }
         appendLine()
 
         val categoryCodeToValue = CharCategory.values().associateBy({ it.code }, { it.value })
 
-        writeIntArray("categoryOfRange", category, writingStrategy) { (even, odd) ->
+        writingStrategy.writeRange("categoryOfRange", category, this) { (even, odd) ->
             if (even == null || odd == null || even == odd) {
                 categoryCodeToValue[even ?: odd]!!
             } else {
@@ -85,14 +89,14 @@ internal class CharCategoryRangesGenerator(
     }
 
     private fun binarySearch(): String = """
-        internal fun binarySearchRange(array: IntArray, needle: Int): Int {
+        private fun binarySearchRange(rangeStart: String, needle: Int): Int {
             var bottom = 0
-            var top = array.size - 1
+            var top = ${start.size} - 1
             var middle = -1
             var value = 0
             while (bottom <= top) {
                 middle = (bottom + top) / 2
-                value = array[middle]
+                value = intFromBase64(rangeStart, middle)
                 if (needle > value)
                     bottom = middle + 1
                 else if (needle == value)
@@ -104,16 +108,46 @@ internal class CharCategoryRangesGenerator(
         }
         """.trimIndent()
 
-    private fun getCategoryValue(): String = """
+    private fun intFromBase64(): String = """
+        private fun intFromBase64(string: String, index: Int): Int {
+            val fromBase64 = CategoryRangesWrapper.fromBase64
+            val stringIndex = (index / 3) * 8
+            return when (index % 3) {
+                0 -> (fromBase64[string[stringIndex].toInt()] shl 10) or
+                        (fromBase64[string[stringIndex + 1].toInt()] shl 4) or
+                        (fromBase64[string[stringIndex + 2].toInt()] shr 2)
+        
+                1 -> ((fromBase64[string[stringIndex + 2].toInt()] and 0b11) shl 14) or
+                        (fromBase64[string[stringIndex + 3].toInt()] shl 8) or
+                        (fromBase64[string[stringIndex + 4].toInt()] shl 2) or
+                        (fromBase64[string[stringIndex + 5].toInt()] shr 4)
+        
+                2 -> ((fromBase64[string[stringIndex + 5].toInt()] and 0b1111) shl 12) or
+                        (fromBase64[string[stringIndex + 6].toInt()] shl 6) or
+                        (fromBase64[string[stringIndex + 7].toInt()])
+        
+                else -> error("Unreachable")
+            }
+        }
+        """.trimIndent()
+
+    private fun getCategoryValue(): String {
+        fun getAt(name: String, index: String): String {
+            return if (writingStrategy.useBase64)
+                "intFromBase64(${writingStrategy.rangeReference(name)}, $index)"
+            else
+                "${writingStrategy.rangeReference(name)}[$index]"
+        }
+        return """
         /**
          * Returns the Unicode general category of this character as an Int.
          */
         internal fun Char.getCategoryValue(): Int {
             val ch = this.toInt()
             val index = binarySearchRange(${writingStrategy.rangeReference("rangeStart")}, ch)
-            val high = ${writingStrategy.rangeReference("rangeEnd[index]")}
+            val high = ${getAt("rangeEnd", "index")}
             if (ch <= high) {
-                val code = ${writingStrategy.rangeReference("categoryOfRange")}[index]
+                val code = ${getAt("categoryOfRange", "index")}
                 if (code < 0x100) {
                     return code
                 }
@@ -122,4 +156,5 @@ internal class CharCategoryRangesGenerator(
             return CharCategory.UNASSIGNED.value
         }
         """.trimIndent()
+    }
 }

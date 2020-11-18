@@ -51,6 +51,8 @@ internal class DigitRangesGenerator(
             writer.appendLine()
             writer.writeRanges()
             writer.appendLine()
+            writer.appendLine(binarySearch())
+            writer.appendLine()
             writer.appendLine(isDigitImpl())
         }
     }
@@ -60,6 +62,26 @@ internal class DigitRangesGenerator(
         writeIntArray("rangeStart", start, writingStrategy) { it }
         writingStrategy.afterWritingRanges(this)
     }
+
+    private fun binarySearch(): String = """
+        internal fun binarySearchRange(array: IntArray, needle: Int): Int {
+            var bottom = 0
+            var top = array.size - 1
+            var middle = -1
+            var value = 0
+            while (bottom <= top) {
+                middle = (bottom + top) / 2
+                value = array[middle]
+                if (needle > value)
+                    bottom = middle + 1
+                else if (needle == value)
+                    return middle
+                else
+                    top = middle - 1
+            }
+            return middle - (if (needle < value) 1 else 0)
+        }
+        """.trimIndent()
 
     private fun isDigitImpl(): String {
         val rangeStart = writingStrategy.rangeReference("rangeStart")

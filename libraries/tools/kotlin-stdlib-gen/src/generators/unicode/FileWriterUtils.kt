@@ -42,6 +42,19 @@ internal fun <E> FileWriter.writeIntArray(
     appendLine()
 }
 
+internal fun <E> FileWriter.writeIntsInBase64(
+    name: String,
+    elements: List<E>,
+    strategy: RangesWritingStrategy,
+    transform: (E) -> Int
+) {
+    val ints = elements.map(transform)
+    val bytes = ints.flatMap { listOf((it shr 8).toByte(), it.toByte()) }.toByteArray()
+    val base64String = java.util.Base64.getEncoder().encodeToString(bytes)
+
+    appendLine("${strategy.indentation}${strategy.rangesVisibilityModifier} val $name = \"$base64String\"")
+}
+
 internal fun Int.hex(): String {
     val result = toString(radix = 16)
     if (result.first() == '-') {

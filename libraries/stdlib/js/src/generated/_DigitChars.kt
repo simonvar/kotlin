@@ -19,6 +19,24 @@ private class DigitRangesWrapper {
     }
 }
 
+internal fun binarySearchRange(array: IntArray, needle: Int): Int {
+    var bottom = 0
+    var top = array.size - 1
+    var middle = -1
+    var value = 0
+    while (bottom <= top) {
+        middle = (bottom + top) / 2
+        value = array[middle]
+        if (needle > value)
+            bottom = middle + 1
+        else if (needle == value)
+            return middle
+        else
+            top = middle - 1
+    }
+    return middle - (if (needle < value) 1 else 0)
+}
+
 /**
  * Returns `true` if this character is a digit.
  */
