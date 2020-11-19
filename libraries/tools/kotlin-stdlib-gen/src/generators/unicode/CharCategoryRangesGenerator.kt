@@ -71,20 +71,22 @@ internal class CharCategoryRangesGenerator(
 
     private fun FileWriter.writeRanges() {
         writingStrategy.beforeWritingRanges(this)
-        writingStrategy.writeRange("rangeStart", start, this) { it }
+        writingStrategy.writeRange("rangeStart", start, this)
         appendLine()
-        writingStrategy.writeRange("rangeEnd", end, this) { it }
+        writingStrategy.writeRange("rangeEnd", end, this)
         appendLine()
 
         val categoryCodeToValue = CharCategory.values().associateBy({ it.code }, { it.value })
 
-        writingStrategy.writeRange("categoryOfRange", category, this) { (even, odd) ->
+        val intCategories = category.map { (even, odd) ->
             if (even == null || odd == null || even == odd) {
                 categoryCodeToValue[even ?: odd]!!
             } else {
                 categoryCodeToValue[even]!! + (categoryCodeToValue[odd]!! shl 8)
             }
         }
+
+        writingStrategy.writeRange("categoryOfRange", intCategories, this)
         writingStrategy.afterWritingRanges(this)
     }
 

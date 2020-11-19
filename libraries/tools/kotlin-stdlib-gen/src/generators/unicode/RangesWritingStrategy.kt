@@ -16,7 +16,7 @@ internal sealed class RangesWritingStrategy {
     abstract fun rangeReference(name: String): String
 
     abstract val useBase64: Boolean
-    abstract fun <E> writeRange(name: String, elements: List<E>, writer: FileWriter, transform: (E) -> Int)
+    abstract fun writeRange(name: String, elements: List<Int>, writer: FileWriter)
 
     companion object {
         fun of(target: KotlinTarget, wrapperName: String, useBase64: Boolean = false): RangesWritingStrategy {
@@ -37,8 +37,8 @@ internal object NativeRangesWritingStrategy : RangesWritingStrategy() {
 
     override val useBase64: Boolean get() = false
 
-    override fun <E> writeRange(name: String, elements: List<E>, writer: FileWriter, transform: (E) -> Int) =
-        writer.writeIntArray(name, elements, this, transform)
+    override fun writeRange(name: String, elements: List<Int>, writer: FileWriter) =
+        writer.writeIntArray(name, elements, this)
 }
 
 // see KT-42461, KT-40482
@@ -66,9 +66,9 @@ internal class JsRangesWritingStrategy(
 
     override fun rangeReference(name: String): String = "$wrapperName.$name"
 
-    override fun <E> writeRange(name: String, elements: List<E>, writer: FileWriter, transform: (E) -> Int) =
+    override fun writeRange(name: String, elements: List<Int>, writer: FileWriter) =
         if (useBase64)
-            writer.writeIntsInBase64(name, elements, this, transform)
+            writer.writeIntsInBase64(name, elements, this)
         else
-            writer.writeIntArray(name, elements, this, transform)
+            writer.writeIntArray(name, elements, this)
 }

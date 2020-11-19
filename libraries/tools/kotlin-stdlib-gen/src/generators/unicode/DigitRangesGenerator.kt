@@ -59,7 +59,7 @@ internal class DigitRangesGenerator(
 
     private fun FileWriter.writeRanges() {
         writingStrategy.beforeWritingRanges(this)
-        writeIntArray("rangeStart", start, writingStrategy) { it }
+        writeIntArray("rangeStart", start, writingStrategy)
         writingStrategy.afterWritingRanges(this)
     }
 

@@ -71,9 +71,9 @@ internal class LetterRangesGenerator(
 
     private fun FileWriter.writeRanges() {
         writingStrategy.beforeWritingRanges(this)
-        writeIntArray("rangeStart", ranges.map { it.rangeStart() }, writingStrategy) { it }
+        writeIntArray("rangeStart", ranges.map { it.rangeStart() }, writingStrategy)
         appendLine()
-        writeIntArray("rangeEnd", ranges.map { it.rangeEnd() }, writingStrategy) { it }
+        writeIntArray("rangeEnd", ranges.map { it.rangeEnd() }, writingStrategy)
         writingStrategy.afterWritingRanges(this)
     }
 
