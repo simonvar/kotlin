@@ -14,9 +14,7 @@ internal class CharCategoryRangesGenerator(
     private val outputFile: File,
     target: KotlinTarget
 ) : UnicodeDataGenerator {
-    private val start = mutableListOf<Int>()
-    private val end = mutableListOf<Int>()
-    private val category = mutableListOf<MutableList<String?>>()
+    private val ranges = mutableListOf<CategorizedRangePattern>()
     private val writingStrategy = RangesWritingStrategy.of(target, "CategoryRangesWrapper", useBase64 = true)
 
     init {
@@ -26,30 +24,28 @@ internal class CharCategoryRangesGenerator(
     override fun appendChar(char: String, name: String, categoryCode: String) {
         val charCode = char.toInt(radix = 16)
 
-        require(charCode == 0 || start.isNotEmpty())
+        require(charCode == 0 || ranges.isNotEmpty())
 
-        if (start.isEmpty() || name.endsWith(", First>")) {
-            start.add(charCode)
-            end.add(charCode)
-            category.add(mutableListOf(categoryCode, null))
+        if (ranges.isEmpty() || name.endsWith(", First>")) {
+            ranges.add(CategorizedConsequentPattern(charCode, categoryCode))
             return
         }
+
+        val lastRange = ranges.last()
+
         if (name.endsWith(", Last>")) {
-            end[end.lastIndex] = charCode
-            check(category.last().first() == categoryCode)
+            check(lastRange is CategorizedConsequentPattern)
+            check(lastRange.categoryCode == categoryCode)
+            lastRange.setEnd(charCode)
             return
         }
 
-        val lastCategory = category.last()[charCode and 1]
-
-        if (end.last() == charCode - 1 && (lastCategory == null || lastCategory == categoryCode)) {
-            end[end.lastIndex] = charCode
-            category.last()[charCode and 1] = categoryCode
+        val newLastRange = lastRange.append(charCode, categoryCode)
+        if (newLastRange != null) {
+            ranges[ranges.lastIndex] = newLastRange
         } else {
-            start.add(charCode)
-            end.add(charCode)
-            category.add(mutableListOf(null, null))
-            category.last()[charCode and 1] = categoryCode
+//            println(lastRange)
+            ranges.add(CategorizedConsequentPattern(charCode, categoryCode))
         }
     }
 
@@ -71,29 +67,18 @@ internal class CharCategoryRangesGenerator(
 
     private fun FileWriter.writeRanges() {
         writingStrategy.beforeWritingRanges(this)
-        writingStrategy.writeRange("rangeStart", start, this)
+        writingStrategy.writeRange("rangeStart", ranges.map { it.rangeStart() }, this)
         appendLine()
-        writingStrategy.writeRange("rangeEnd", end, this)
+        writingStrategy.writeRange("rangeEnd", ranges.map { it.rangeEnd() }, this)
         appendLine()
-
-        val categoryCodeToValue = CharCategory.values().associateBy({ it.code }, { it.value })
-
-        val intCategories = category.map { (even, odd) ->
-            if (even == null || odd == null || even == odd) {
-                categoryCodeToValue[even ?: odd]!!
-            } else {
-                categoryCodeToValue[even]!! + (categoryCodeToValue[odd]!! shl 8)
-            }
-        }
-
-        writingStrategy.writeRange("categoryOfRange", intCategories, this)
+        writingStrategy.writeRange("categoryOfRange", ranges.map { it.category() }, this)
         writingStrategy.afterWritingRanges(this)
     }
 
     private fun binarySearch(): String = """
         private fun binarySearchRange(rangeStart: String, needle: Int): Int {
             var bottom = 0
-            var top = ${start.size} - 1
+            var top = ${ranges.size} - 1
             var middle = -1
             var value = 0
             while (bottom <= top) {
@@ -150,10 +135,17 @@ internal class CharCategoryRangesGenerator(
             val high = ${getAt("rangeEnd", "index")}
             if (ch <= high) {
                 val code = ${getAt("categoryOfRange", "index")}
-                if (code < 0x100) {
+                if (code < 0x20) {
                     return code
                 }
-                return if ((ch and 1) == 1) code shr 8 else code and 0xff
+                if (code < 0x400) {
+                    return if ((ch and 1) == 1) code shr 5 else code and 0x1f
+                }
+                return when (ch % 3) {
+                    2 -> code shr 10
+                    1 -> (code shr 5) and 0x1f
+                    else -> code and 0x1f
+                }
             }
             return CharCategory.UNASSIGNED.value
         }
