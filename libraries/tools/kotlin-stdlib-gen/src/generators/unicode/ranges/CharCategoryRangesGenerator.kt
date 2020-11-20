@@ -134,21 +134,21 @@ internal class CharCategoryRangesGenerator(
             val ch = this.toInt()
             val index = binarySearchRange(${writingStrategy.rangeReference("rangeStart")}, ch)
             val high = ${getAt("rangeEnd", "index")}
+            var value = CharCategory.UNASSIGNED.value
             if (ch <= high) {
                 val code = ${getAt("categoryOfRange", "index")}
-                if (code < 0x20) {
-                    return code
-                }
-                if (code < 0x400) {
-                    return if ((ch and 1) == 1) code shr 5 else code and 0x1f
-                }
-                return when (ch % 3) {
-                    2 -> code shr 10
-                    1 -> (code shr 5) and 0x1f
-                    else -> code and 0x1f
+                value = when {
+                    code < 0x20 -> code
+                    code < 0x400 -> if ((ch and 1) == 1) code shr 5 else code and 0x1f
+                    else ->
+                        when (ch % 3) {
+                            2 -> code shr 10
+                            1 -> (code shr 5) and 0x1f
+                            else -> code and 0x1f
+                        }
                 }
             }
-            return CharCategory.UNASSIGNED.value
+            return if (value == $UNASSIGNED_CATEGORY_VALUE_REPLACEMENT) CharCategory.UNASSIGNED.value else value
         }
         """.trimIndent()
     }
