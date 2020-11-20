@@ -3,7 +3,9 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package generators.unicode
+package generators.unicode.ranges
+
+import generators.unicode.*
 
 internal interface CategorizedRangePattern {
     fun append(charCode: Int, categoryCode: String): CategorizedRangePattern?

@@ -5,6 +5,7 @@
 
 package generators.unicode
 
+import generators.unicode.ranges.*
 import templates.COPYRIGHT_NOTICE
 import templates.KotlinTarget
 import templates.readCopyrightNoticeFromProfile
