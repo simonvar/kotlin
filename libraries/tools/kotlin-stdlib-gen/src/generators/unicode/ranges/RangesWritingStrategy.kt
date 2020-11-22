@@ -67,7 +67,7 @@ internal object NativeRangesWritingStrategy : RangesWritingStrategy() {
         writer.appendLine()
         writer.writeIntArray("rangeEnd", ranges.map { it.rangeEnd() }, this)
         writer.appendLine()
-        writer.writeIntArray("categoryOfRange", ranges.map { it.category() }, this)
+        writer.writeIntArray("rangeCategory", ranges.map { it.category() }, this)
     }
 
     override fun getCategoryValue(): String = """
@@ -80,7 +80,7 @@ internal object NativeRangesWritingStrategy : RangesWritingStrategy() {
             val high = ${getAt("rangeEnd", "index")}
             var value = CharCategory.UNASSIGNED.value
             if (ch <= high) {
-                val code = ${getAt("categoryOfRange", "index")}
+                val code = ${getAt("rangeCategory", "index")}
                 value = categoryValueAt(index, ch)
             }
             return if (value == $UNASSIGNED_CATEGORY_VALUE_REPLACEMENT) CharCategory.UNASSIGNED.value else value
@@ -122,13 +122,13 @@ internal open class JsRangesWritingStrategy(
         writer.appendLine()
         this.writeShortRangeLength("rangeLength", shortRanges.map { it.rangeLength() }, writer)
         writer.appendLine()
-        this.writeRange("categoryOfRange", shortRanges.map { it.category() }, writer)
+        this.writeRange("rangeCategory", shortRanges.map { it.category() }, writer)
         writer.appendLine()
         this.writeRange("longRangeStart", longRanges.map { it.rangeStart() }, writer)
         writer.appendLine()
         this.writeRange("longRangeLength", longRanges.map { it.rangeLength() }, writer)
         writer.appendLine()
-        this.writeRange("categoryOfLongRange", longRanges.map { it.category() }, writer)
+        this.writeRange("longRangeCategory", longRanges.map { it.category() }, writer)
     }
 
     override fun getCategoryValue(): String = """
@@ -144,7 +144,7 @@ internal open class JsRangesWritingStrategy(
             var length = ${shortRangeGetAt("rangeLength", "index")}
             
             if (ch < start + length) {
-                val code = ${getAt("categoryOfRange", "index")}
+                val code = ${getAt("rangeCategory", "index")}
                 value = categoryValueFrom(code, ch)
             } else {
                 index = ${getIndex("longRangeStart", "ch")}
@@ -152,7 +152,7 @@ internal open class JsRangesWritingStrategy(
                 length = ${getAt("longRangeLength", "index")}
                 
                 if (ch < start + length) {
-                    val code = ${getAt("categoryOfLongRange", "index")}
+                    val code = ${getAt("longRangeCategory", "index")}
                     value = categoryValueFrom(code, ch)
                 }
             }
