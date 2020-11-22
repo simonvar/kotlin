@@ -92,16 +92,14 @@ internal object NativeRangesWritingStrategy : RangesWritingStrategy() {
 internal open class JsRangesWritingStrategy(
     private val wrapperName: String
 ) : RangesWritingStrategy() {
-    override val indentation: String get() = "        " // 8 spaces
+    override val indentation: String get() = " ".repeat(4)
     override val rangesVisibilityModifier: String get() = "internal"
 
     override fun beforeWritingRanges(writer: FileWriter) {
-        writer.appendLine("private class $wrapperName {")
-        writer.appendLine("    companion object {")
+        writer.appendLine("private object $wrapperName {")
     }
 
     override fun afterWritingRanges(writer: FileWriter) {
-        writer.appendLine("    }")
         writer.appendLine("}")
     }
 
