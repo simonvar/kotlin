@@ -90,7 +90,7 @@ internal object NativeRangesWritingStrategy : RangesWritingStrategy() {
 
 // see KT-42461, KT-40482
 internal open class JsRangesWritingStrategy(
-    private val wrapperName: String
+    protected val wrapperName: String
 ) : RangesWritingStrategy() {
     override val indentation: String get() = " ".repeat(4)
     override val rangesVisibilityModifier: String get() = "internal"
@@ -217,7 +217,7 @@ internal class Base64JSRangesWritingStrategy(wrapperName: String) : JsRangesWrit
 
     private fun intFromBase64(): String = """
         private fun intFromBase64(string: String, index: Int): Int {
-            val fromBase64 = CategoryRangesWrapper.fromBase64
+            val fromBase64 = $wrapperName.fromBase64
             val stringIndex = (index / 3) * 8
             return when (index % 3) {
                 0 -> (fromBase64[string[stringIndex].toInt()] shl 10) or

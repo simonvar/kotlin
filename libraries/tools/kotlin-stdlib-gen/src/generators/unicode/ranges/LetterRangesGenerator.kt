@@ -16,7 +16,7 @@ internal class LetterRangesGenerator(
     target: KotlinTarget
 ) : UnicodeDataGenerator {
     private val ranges = mutableListOf<RangePattern>()
-    private val writingStrategy = RangesWritingStrategy.of(target, "LetterRangesWrapper")
+    private val writingStrategy = RangesWritingStrategy.of(target, "Letter")
 
     private val letterCategoryCodes = listOf(
         CharCategory.UPPERCASE_LETTER.code,

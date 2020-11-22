@@ -16,7 +16,7 @@ internal class CharCategoryRangesGenerator(
     target: KotlinTarget
 ) : UnicodeDataGenerator {
     private val ranges = mutableListOf<CategorizedRangePattern>()
-    private val writingStrategy = RangesWritingStrategy.of(target, "CategoryRangesWrapper", useBase64 = true)
+    private val writingStrategy = RangesWritingStrategy.of(target, "Category", useBase64 = true)
 
     init {
         outputFile.parentFile.requireExistingDir()

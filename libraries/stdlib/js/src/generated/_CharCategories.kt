@@ -11,7 +11,7 @@ package kotlin.text
 //
 
 // 1104 ranges totally
-private object CategoryRangesWrapper {
+private object Category {
     private const val toBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
     internal val fromBase64 = IntArray(128).apply { toBase64.forEachIndexed { index, char -> this[char.toInt()] = index } }
 
@@ -48,7 +48,7 @@ private fun binarySearchRange(rangeStart: String, needle: Int): Int {
 }
 
 private fun intFromBase64(string: String, index: Int): Int {
-    val fromBase64 = CategoryRangesWrapper.fromBase64
+    val fromBase64 = Category.fromBase64
     val stringIndex = (index / 3) * 8
     return when (index % 3) {
         0 -> (fromBase64[string[stringIndex].toInt()] shl 10) or
@@ -88,20 +88,20 @@ internal fun Char.getCategoryValue(): Int {
     val ch = this.toInt()
     var value = CharCategory.UNASSIGNED.value
     
-    var index = binarySearchRange(CategoryRangesWrapper.rangeStart, ch)
-    var start = intFromBase64(CategoryRangesWrapper.rangeStart, index)
-    var length = CategoryRangesWrapper.fromBase64[CategoryRangesWrapper.rangeLength[index].toInt()]
+    var index = binarySearchRange(Category.rangeStart, ch)
+    var start = intFromBase64(Category.rangeStart, index)
+    var length = Category.fromBase64[Category.rangeLength[index].toInt()]
     
     if (ch < start + length) {
-        val code = intFromBase64(CategoryRangesWrapper.rangeCategory, index)
+        val code = intFromBase64(Category.rangeCategory, index)
         value = categoryValueFrom(code, ch)
     } else {
-        index = binarySearchRange(CategoryRangesWrapper.longRangeStart, ch)
-        start = intFromBase64(CategoryRangesWrapper.longRangeStart, index)
-        length = intFromBase64(CategoryRangesWrapper.longRangeLength, index)
+        index = binarySearchRange(Category.longRangeStart, ch)
+        start = intFromBase64(Category.longRangeStart, index)
+        length = intFromBase64(Category.longRangeLength, index)
         
         if (ch < start + length) {
-            val code = intFromBase64(CategoryRangesWrapper.longRangeCategory, index)
+            val code = intFromBase64(Category.longRangeCategory, index)
             value = categoryValueFrom(code, ch)
         }
     }

@@ -10,7 +10,7 @@ package kotlin.text
 // See: https://github.com/JetBrains/kotlin/tree/master/libraries/stdlib
 //
 
-private object LetterRangesWrapper {
+private object Letter {
     internal val rangeStart = intArrayOf(
         0x0041, 0x00aa, 0x00ca, 0x00f8, 0x02c6, 0x02ec, 0x0370, 0x0390, 0x03f7, 0x048a, 0x0531, 0x0560, 0x05ef, 0x066e, 0x06d5, 0x06fa, 0x071a, 0x07b1, 0x07f4, 0x0814, 
         0x0840, 0x08a0, 0x0904, 0x0950, 0x0971, 0x0993, 0x09b6, 0x09dc, 0x09fc, 0x0a1c, 0x0a59, 0x0a85, 0x0aa5, 0x0ad0, 0x0af9, 0x0b19, 0x0b39, 0x0b5c, 0x0b83, 0x0ba3, 
@@ -39,10 +39,10 @@ private object LetterRangesWrapper {
  */
 internal fun Char.isLetterImpl(): Boolean {
     val ch = this.toInt()
-    val index = binarySearchRange(LetterRangesWrapper.rangeStart, ch)
+    val index = binarySearchRange(Letter.rangeStart, ch)
 
-    val rangeStart = LetterRangesWrapper.rangeStart[index]
-    val rangeEnd = LetterRangesWrapper.rangeEnd[index]
+    val rangeStart = Letter.rangeStart[index]
+    val rangeEnd = Letter.rangeEnd[index]
 
     val isGapPattern = rangeEnd > 0xffff
     if (isGapPattern) {

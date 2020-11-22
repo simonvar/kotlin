@@ -17,7 +17,7 @@ internal class DigitRangesGenerator(
 ) : UnicodeDataGenerator {
     private val start = mutableListOf<Int>()
     private val end = mutableListOf<Int>()
-    private val writingStrategy = RangesWritingStrategy.of(target, "DigitRangesWrapper")
+    private val writingStrategy = RangesWritingStrategy.of(target, "Digit")
 
     init {
         outputFile.parentFile.requireExistingDir()
