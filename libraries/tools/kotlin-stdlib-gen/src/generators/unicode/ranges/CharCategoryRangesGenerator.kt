@@ -54,102 +54,18 @@ internal class CharCategoryRangesGenerator(
         FileWriter(outputFile).use { writer ->
             writer.writeHeader(outputFile, "kotlin.text")
             writer.appendLine()
+            writer.appendLine("// ${ranges.size} ranges totally")
             writer.writeRanges()
             writer.appendLine()
-            if (writingStrategy.useBase64) {
-                writer.appendLine(binarySearch())
-                writer.appendLine()
-                writer.appendLine(intFromBase64())
-                writer.appendLine()
-            }
-            writer.appendLine(getCategoryValue())
+            writer.appendLine(writingStrategy.categoryValueFrom())
+            writer.appendLine()
+            writer.appendLine(writingStrategy.getCategoryValue())
         }
     }
 
     private fun FileWriter.writeRanges() {
         writingStrategy.beforeWritingRanges(this)
-        writingStrategy.writeRange("rangeStart", ranges.map { it.rangeStart() }, this)
-        appendLine()
-        writingStrategy.writeRange("rangeEnd", ranges.map { it.rangeEnd() }, this)
-        appendLine()
-        writingStrategy.writeRange("categoryOfRange", ranges.map { it.category() }, this)
+        writingStrategy.writeRanges(ranges, this)
         writingStrategy.afterWritingRanges(this)
-    }
-
-    private fun binarySearch(): String = """
-        private fun binarySearchRange(rangeStart: String, needle: Int): Int {
-            var bottom = 0
-            var top = ${ranges.size} - 1
-            var middle = -1
-            var value = 0
-            while (bottom <= top) {
-                middle = (bottom + top) / 2
-                value = intFromBase64(rangeStart, middle)
-                if (needle > value)
-                    bottom = middle + 1
-                else if (needle == value)
-                    return middle
-                else
-                    top = middle - 1
-            }
-            return middle - (if (needle < value) 1 else 0)
-        }
-        """.trimIndent()
-
-    private fun intFromBase64(): String = """
-        private fun intFromBase64(string: String, index: Int): Int {
-            val fromBase64 = CategoryRangesWrapper.fromBase64
-            val stringIndex = (index / 3) * 8
-            return when (index % 3) {
-                0 -> (fromBase64[string[stringIndex].toInt()] shl 10) or
-                        (fromBase64[string[stringIndex + 1].toInt()] shl 4) or
-                        (fromBase64[string[stringIndex + 2].toInt()] shr 2)
-        
-                1 -> ((fromBase64[string[stringIndex + 2].toInt()] and 0b11) shl 14) or
-                        (fromBase64[string[stringIndex + 3].toInt()] shl 8) or
-                        (fromBase64[string[stringIndex + 4].toInt()] shl 2) or
-                        (fromBase64[string[stringIndex + 5].toInt()] shr 4)
-        
-                2 -> ((fromBase64[string[stringIndex + 5].toInt()] and 0b1111) shl 12) or
-                        (fromBase64[string[stringIndex + 6].toInt()] shl 6) or
-                        (fromBase64[string[stringIndex + 7].toInt()])
-        
-                else -> error("Unreachable")
-            }
-        }
-        """.trimIndent()
-
-    private fun getCategoryValue(): String {
-        fun getAt(name: String, index: String): String {
-            return if (writingStrategy.useBase64)
-                "intFromBase64(${writingStrategy.rangeReference(name)}, $index)"
-            else
-                "${writingStrategy.rangeReference(name)}[$index]"
-        }
-        return """
-        /**
-         * Returns the Unicode general category of this character as an Int.
-         */
-        internal fun Char.getCategoryValue(): Int {
-            val ch = this.toInt()
-            val index = binarySearchRange(${writingStrategy.rangeReference("rangeStart")}, ch)
-            val high = ${getAt("rangeEnd", "index")}
-            var value = CharCategory.UNASSIGNED.value
-            if (ch <= high) {
-                val code = ${getAt("categoryOfRange", "index")}
-                value = when {
-                    code < 0x20 -> code
-                    code < 0x400 -> if ((ch and 1) == 1) code shr 5 else code and 0x1f
-                    else ->
-                        when (ch % 3) {
-                            2 -> code shr 10
-                            1 -> (code shr 5) and 0x1f
-                            else -> code and 0x1f
-                        }
-                }
-            }
-            return if (value == $UNASSIGNED_CATEGORY_VALUE_REPLACEMENT) CharCategory.UNASSIGNED.value else value
-        }
-        """.trimIndent()
     }
 }

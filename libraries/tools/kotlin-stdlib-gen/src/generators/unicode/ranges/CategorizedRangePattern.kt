@@ -15,6 +15,8 @@ internal interface CategorizedRangePattern {
     fun categoryCodeOf(charCode: Int): String
 }
 
+internal fun CategorizedRangePattern.rangeLength(): Int = rangeEnd() - rangeStart() + 1
+
 // 17 and 31 category values are not reserved. Use 17 to replace UNASSIGNED value (0) to be able to encode range pattern categories.
 internal const val UNASSIGNED_CATEGORY_VALUE_REPLACEMENT = 17
 private val categoryCodeToValue = CharCategory.values().associateBy({ it.code }, { if (it.value == 0) UNASSIGNED_CATEGORY_VALUE_REPLACEMENT else it.value })
