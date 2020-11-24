@@ -31,17 +31,14 @@ internal class CategorizedConsequentPattern(
     var end = start
         private set
 
-    init {
-        require(categoryCode != "Cn") // Consequent ranges of UNASSIGNED category shouldn't be created.
-    }
-
     fun setEnd(end: Int) {
         assert(this.end < end)
         this.end = end
     }
 
     override fun append(charCode: Int, categoryCode: String): CategorizedRangePattern? {
-        if (charCode == end + 1 && categoryCode == this.categoryCode) {
+        require(charCode == end + 1)
+        if (categoryCode == this.categoryCode) {
             end = charCode
             return this
         }
@@ -85,7 +82,8 @@ internal class CategorizedAlternatingPattern private constructor(
     internal val evenOddCategoryCodes: Array<String>
 ) : CategorizedRangePattern {
     override fun append(charCode: Int, categoryCode: String): CategorizedRangePattern? {
-        if (charCode == end + 1 && categoryCode == evenOddCategoryCodes[charCode % 2]) {
+        require(charCode == end + 1)
+        if (categoryCode == evenOddCategoryCodes[charCode % 2]) {
             end = charCode
             return this
         }
@@ -143,7 +141,8 @@ internal class CategorizedPeriodicTrioPattern private constructor(
     private val categoryCodes: Array<String>
 ) : CategorizedRangePattern {
     override fun append(charCode: Int, categoryCode: String): CategorizedRangePattern? {
-        if (charCode == end + 1 && categoryCode == categoryCodes[charCode % 3]) {
+        require(charCode == end + 1)
+        if (categoryCode == categoryCodes[charCode % 3]) {
             end = charCode
             return this
         }

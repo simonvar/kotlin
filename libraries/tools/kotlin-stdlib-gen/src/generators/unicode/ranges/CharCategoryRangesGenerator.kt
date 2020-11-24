@@ -16,7 +16,7 @@ internal class CharCategoryRangesGenerator(
     target: KotlinTarget
 ) : UnicodeDataGenerator {
     private val ranges = mutableListOf<CategorizedRangePattern>()
-    private val writingStrategy = RangesWritingStrategy.of(target, "Category", useBase64 = true)
+    private val writingStrategy = RangesWritingStrategy.of(target, "Category", useBase64 = false)
 
     init {
         outputFile.parentFile.requireExistingDir()
@@ -32,7 +32,7 @@ internal class CharCategoryRangesGenerator(
             return
         }
 
-        val lastRange = ranges.last()
+        var lastRange = ranges.last()
 
         if (name.endsWith(", Last>")) {
             check(lastRange is CategorizedConsequentPattern)
@@ -41,13 +41,22 @@ internal class CharCategoryRangesGenerator(
             return
         }
 
-        val newLastRange = lastRange.append(charCode, categoryCode)
-        if (newLastRange != null) {
-            ranges[ranges.lastIndex] = newLastRange
-        } else {
-//            println(lastRange)
-            ranges.add(CategorizedConsequentPattern(charCode, categoryCode))
+        fun append(charCode: Int, categoryCode: String) {
+            val newLastRange = lastRange.append(charCode, categoryCode)
+            if (newLastRange != null) {
+                lastRange = newLastRange
+                ranges[ranges.lastIndex] = lastRange
+            } else {
+//                println(lastRange)
+                lastRange = CategorizedConsequentPattern(charCode, categoryCode)
+                ranges.add(lastRange)
+            }
         }
+
+        for (unassignedCharCode in lastRange.rangeEnd() + 1 until charCode) {
+            append(unassignedCharCode, CharCategory.UNASSIGNED.code)
+        }
+        append(charCode, categoryCode)
     }
 
     override fun close() {
