@@ -14,18 +14,24 @@ internal sealed class RangesWritingStrategy {
     abstract val rangesVisibilityModifier: String
     abstract fun beforeWritingRanges(writer: FileWriter)
     abstract fun afterWritingRanges(writer: FileWriter)
-    abstract fun rangeReference(name: String): String
+    abstract fun rangeRef(name: String): String
 
     fun getIndex(name: String, charCode: String): String =
-        "binarySearchRange(${rangeReference(name)}, $charCode)"
+        "binarySearchRange(${rangeRef(name)}, $charCode)"
 
     open fun getAt(name: String, index: String): String =
-        "${rangeReference(name)}[$index]"
+        "${rangeRef(name)}[$index]"
 
-    abstract fun writeRange(name: String, elements: List<Int>, writer: FileWriter)
-    abstract fun writeRanges(ranges: List<CategorizedRangePattern>, writer: FileWriter)
+    fun writeRanges(ranges: List<CategorizedRangePattern>, writer: FileWriter) {
+        this.writeRangeStart("rangeStart", ranges.map { it.rangeStart() }, writer)
+        writer.appendLine()
+        this.writeRangeCategory("rangeCategory", ranges.map { it.category() }, writer)
+    }
 
-    open fun categoryValueFrom(): String = """
+    abstract fun writeRangeStart(name: String, elements: List<Int>, writer: FileWriter)
+    abstract fun writeRangeCategory(name: String, elements: List<Int>, writer: FileWriter)
+
+    fun categoryValueFrom(): String = """
         private fun categoryValueFrom(code: Int, ch: Int): Int {
             return when {
                 code < 0x20 -> code
@@ -40,16 +46,37 @@ internal sealed class RangesWritingStrategy {
         }
         """.trimIndent()
 
-    abstract fun getCategoryValue(): String
+    open fun getCategoryValue(): String = """
+        /**
+         * Returns the Unicode general category of this character as an Int.
+         */
+        internal fun Char.getCategoryValue(): Int {
+            val ch = this.toInt()
+
+            val index = ${getIndex("rangeStart", "ch")}
+            val code = ${getAt("rangeCategory", "index")}
+            val value = categoryValueFrom(code, ch)
+
+            return if (value == $UNASSIGNED_CATEGORY_VALUE_REPLACEMENT) CharCategory.UNASSIGNED.value else value
+        }
+        """.trimIndent()
 
     companion object {
-        fun of(target: KotlinTarget, wrapperName: String, useBase64: Boolean = false): RangesWritingStrategy {
+        fun of(target: KotlinTarget, wrapperName: String, encoding: RangeEncoding = RangeEncoding.INT_LITERAL): RangesWritingStrategy {
             return when (target) {
-                KotlinTarget.JS, KotlinTarget.JS_IR -> if (useBase64) Base64JSRangesWritingStrategy(wrapperName) else JsRangesWritingStrategy(wrapperName)
+                KotlinTarget.JS, KotlinTarget.JS_IR -> when (encoding) {
+                    RangeEncoding.INT_LITERAL -> JsRangesWritingStrategy(wrapperName)
+                    RangeEncoding.FIXED_LENGTH_BASE64 -> Base64JSRangesWritingStrategy(wrapperName)
+                    RangeEncoding.VARIABLE_LENGTH_BASE64 -> VariableLengthBase64Strategy(wrapperName)
+                }
                 else -> NativeRangesWritingStrategy
             }
         }
     }
+}
+
+internal enum class RangeEncoding {
+    INT_LITERAL, FIXED_LENGTH_BASE64, VARIABLE_LENGTH_BASE64
 }
 
 internal object NativeRangesWritingStrategy : RangesWritingStrategy() {
@@ -57,35 +84,15 @@ internal object NativeRangesWritingStrategy : RangesWritingStrategy() {
     override val rangesVisibilityModifier: String get() = "private"
     override fun beforeWritingRanges(writer: FileWriter) {}
     override fun afterWritingRanges(writer: FileWriter) {}
-    override fun rangeReference(name: String): String = name
+    override fun rangeRef(name: String): String = name
 
-    override fun writeRange(name: String, elements: List<Int>, writer: FileWriter) =
+    override fun writeRangeStart(name: String, elements: List<Int>, writer: FileWriter) {
         writer.writeIntArray(name, elements, this)
-
-    override fun writeRanges(ranges: List<CategorizedRangePattern>, writer: FileWriter) {
-        writer.writeIntArray("rangeStart", ranges.map { it.rangeStart() }, this)
-        writer.appendLine()
-        writer.writeIntArray("rangeEnd", ranges.map { it.rangeEnd() }, this)
-        writer.appendLine()
-        writer.writeIntArray("rangeCategory", ranges.map { it.category() }, this)
     }
 
-    override fun getCategoryValue(): String = """
-        /**
-         * Returns the Unicode general category of this character as an Int.
-         */
-        internal fun Char.getCategoryValue(): Int {
-            val ch = this.toInt()
-            val index = ${getIndex("rangeStart", "ch")}
-            val high = ${getAt("rangeEnd", "index")}
-            var value = CharCategory.UNASSIGNED.value
-            if (ch <= high) {
-                val code = ${getAt("rangeCategory", "index")}
-                value = categoryValueAt(index, ch)
-            }
-            return if (value == $UNASSIGNED_CATEGORY_VALUE_REPLACEMENT) CharCategory.UNASSIGNED.value else value
-        }
-        """.trimIndent()
+    override fun writeRangeCategory(name: String, elements: List<Int>, writer: FileWriter) {
+        writer.writeIntArray(name, elements, this)
+    }
 }
 
 // see KT-42461, KT-40482
@@ -103,37 +110,13 @@ internal open class JsRangesWritingStrategy(
         writer.appendLine("}")
     }
 
-    override fun rangeReference(name: String): String = "$wrapperName.$name"
+    override fun rangeRef(name: String): String = "$wrapperName.$name"
 
-    override fun writeRange(name: String, elements: List<Int>, writer: FileWriter) =
+    override fun writeRangeStart(name: String, elements: List<Int>, writer: FileWriter) =
         writer.writeIntArray(name, elements, this)
 
-    protected open fun writeShortRangeLength(name: String, elements: List<Int>, writer: FileWriter) =
+    override fun writeRangeCategory(name: String, elements: List<Int>, writer: FileWriter) =
         writer.writeIntArray(name, elements, this)
-
-    protected open fun shortRangeGetAt(name: String, index: String): String =
-        getAt(name, index)
-
-    override fun writeRanges(ranges: List<CategorizedRangePattern>, writer: FileWriter) {
-        this.writeRange("rangeStart", ranges.map { it.rangeStart() }, writer)
-        writer.appendLine()
-        this.writeRange("rangeCategory", ranges.map { it.category() }, writer)
-    }
-
-    override fun getCategoryValue(): String = """
-        /**
-         * Returns the Unicode general category of this character as an Int.
-         */
-        internal fun Char.getCategoryValue(): Int {
-            val ch = this.toInt()
-
-            val index = ${getIndex("rangeStart", "ch")}
-            val code = ${getAt("rangeCategory", "index")}
-            val value = categoryValueFrom(code, ch)
-
-            return if (value == $UNASSIGNED_CATEGORY_VALUE_REPLACEMENT) CharCategory.UNASSIGNED.value else value
-        }
-        """.trimIndent()
 }
 
 internal const val TO_BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -141,7 +124,7 @@ internal const val TO_BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv
 internal class Base64JSRangesWritingStrategy(wrapperName: String) : JsRangesWritingStrategy(wrapperName) {
 
     override fun getAt(name: String, index: String): String =
-        "intFromBase64(${rangeReference(name)}, $index)"
+        "intFromBase64(${rangeRef(name)}, $index)"
 
     override fun beforeWritingRanges(writer: FileWriter) {
         super.beforeWritingRanges(writer)
@@ -158,15 +141,11 @@ internal class Base64JSRangesWritingStrategy(wrapperName: String) : JsRangesWrit
         writer.appendLine(intFromBase64())
     }
 
-    override fun writeRange(name: String, elements: List<Int>, writer: FileWriter) =
-        writer.writeIntsInBase64(name, elements, this)
+    override fun writeRangeStart(name: String, elements: List<Int>, writer: FileWriter) =
+        writer.writeInBase64(name, elements, this)
 
-    override fun writeShortRangeLength(name: String, elements: List<Int>, writer: FileWriter) =
-        writer.write6BitsInBase64(name, elements, this)
-
-    override fun shortRangeGetAt(name: String, index: String): String {
-        return "${rangeReference("fromBase64")}[${rangeReference(name)}[$index].toInt()]"
-    }
+    override fun writeRangeCategory(name: String, elements: List<Int>, writer: FileWriter) =
+        writer.writeInBase64(name, elements, this)
 
     private fun binarySearch(): String = """
         private fun binarySearchRange(rangeStart: String, needle: Int): Int {
@@ -209,6 +188,79 @@ internal class Base64JSRangesWritingStrategy(wrapperName: String) : JsRangesWrit
         
                 else -> error("Unreachable")
             }
+        }
+        """.trimIndent()
+}
+
+internal class VariableLengthBase64Strategy(wrapperName: String) : JsRangesWritingStrategy(wrapperName) {
+
+    override fun beforeWritingRanges(writer: FileWriter) {
+        super.beforeWritingRanges(writer)
+        writer.appendLine("${indentation}private const val toBase64 = \"$TO_BASE64\"")
+        writer.appendLine("${indentation}internal val fromBase64 = IntArray(128).apply { toBase64.forEachIndexed { index, char -> this[char.toInt()] = index } }")
+        writer.appendLine()
+    }
+
+    override fun afterWritingRanges(writer: FileWriter) {
+        writer.appendLine()
+        writer.appendLine("${indentation}internal var decodedRangeStart = intArrayOf()")
+        writer.appendLine("${indentation}internal var decodedRangeCategory = intArrayOf()")
+        super.afterWritingRanges(writer)
+        writer.appendLine()
+        writer.appendLine(decodeVarLenBase64())
+    }
+
+    override fun writeRangeStart(name: String, elements: List<Int>, writer: FileWriter) {
+        val diff = elements.zipWithNext { a, b -> b - a }
+        writer.writeInVariableLengthBase64(name, diff, this)
+    }
+
+    override fun writeRangeCategory(name: String, elements: List<Int>, writer: FileWriter) =
+        writer.writeInVariableLengthBase64(name, elements, this)
+
+    private fun decodeVarLenBase64() = """
+        private fun decodeVarLenBase64(base64: String): MutableList<Int> {
+            val result = mutableListOf<Int>()
+            var int = 0
+            var shift = 0
+            for (char in base64) {
+                val sixBit = Category.fromBase64[char.toInt()]
+                int = int or ((sixBit and 0x1f) shl shift)
+                if (sixBit < 0x20) {
+                    result.add(int)
+                    int = 0
+                    shift = 0
+                } else {
+                    shift += 5
+                }
+            }
+            return result
+        }
+        """.trimIndent()
+
+    override fun getCategoryValue(): String = """
+        /**
+         * Returns the Unicode general category of this character as an Int.
+         */
+        internal fun Char.getCategoryValue(): Int {
+            if (${rangeRef("decodedRangeStart")}.isEmpty()) {
+                val diff = decodeVarLenBase64(${rangeRef("rangeStart")})
+                val values = IntArray(diff.size + 1)
+                for (i in 0 until diff.size) {
+                    values[i + 1] = values[i] + diff[i]
+                }
+        
+                ${rangeRef("decodedRangeStart")} = values
+                ${rangeRef("decodedRangeCategory")} = decodeVarLenBase64(Category.rangeCategory).toIntArray()
+            }
+        
+            val ch = this.toInt()
+        
+            val index = ${getIndex("decodedRangeStart", "ch")}
+            val code = ${getAt("decodedRangeCategory", "index")}
+            val value = categoryValueFrom(code, ch)
+        
+            return if (value == 17) CharCategory.UNASSIGNED.value else value
         }
         """.trimIndent()
 }

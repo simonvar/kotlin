@@ -79,8 +79,8 @@ internal class LetterRangesGenerator(
     }
 
     private fun isLetterImpl(): String {
-        val rangeStart = writingStrategy.rangeReference("rangeStart")
-        val rangeEnd = writingStrategy.rangeReference("rangeEnd")
+        val rangeStart = writingStrategy.rangeRef("rangeStart")
+        val rangeEnd = writingStrategy.rangeRef("rangeEnd")
         return """
         /**
          * Returns `true` if this character is a letter.

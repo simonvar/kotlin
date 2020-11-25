@@ -29,6 +29,7 @@ internal fun FileWriter.writeIntArray(
         append(strategy.indentation + string)
     }
 
+    appendLine("${strategy.indentation}// $name.size = ${elements.size}")
     appendWithIndentation("${strategy.rangesVisibilityModifier} val $name = intArrayOf(")
     for (i in elements.indices) {
         if (i % 20 == 0) {
@@ -42,7 +43,7 @@ internal fun FileWriter.writeIntArray(
     appendLine()
 }
 
-internal fun FileWriter.writeIntsInBase64(
+internal fun FileWriter.writeInBase64(
     name: String,
     elements: List<Int>,
     strategy: RangesWritingStrategy
@@ -50,28 +51,38 @@ internal fun FileWriter.writeIntsInBase64(
     val bytes = elements.flatMap { listOf((it shr 8).toByte(), it.toByte()) }.toByteArray()
     val base64String = java.util.Base64.getEncoder().encodeToString(bytes)
 
+    appendLine("${strategy.indentation}// $name.length = ${base64String.length}")
     appendLine("${strategy.indentation}${strategy.rangesVisibilityModifier} val $name = \"$base64String\"")
 }
 
-internal fun FileWriter.write6BitsInBase64(
+internal fun FileWriter.writeInVariableLengthBase64(
     name: String,
     elements: List<Int>,
     strategy: RangesWritingStrategy
 ) {
-    val base64String = elements.joinToString(separator = "") { TO_BASE64[it].toString() }
+    val base64 = elements.flatMap { it.to6Bits() }
+    val base64String = base64.joinToString(separator = "") { TO_BASE64[it].toString() }
 
+    appendLine("${strategy.indentation}// $name.length = ${base64String.length}")
     appendLine("${strategy.indentation}${strategy.rangesVisibilityModifier} val $name = \"$base64String\"")
 }
 
-internal fun FileWriter.writeBytesInBase64(
-    name: String,
-    elements: List<Int>,
-    strategy: RangesWritingStrategy
-) {
-    val bytes = elements.map { it.toByte() }.toByteArray()
-    val base64String = java.util.Base64.getEncoder().encodeToString(bytes)
+internal fun Int.to6Bits(): List<Int> {
+    val result = mutableListOf<Int>()
 
-    appendLine("${strategy.indentation}${strategy.rangesVisibilityModifier} val $name = \"$base64String\"")
+    var value = this
+    do {
+        var fiveBits = value and 0x1f
+        value = value shr 5
+        if (value != 0) {
+            fiveBits = fiveBits or 0x20
+        }
+        result.add(fiveBits)
+    } while (value != 0)
+
+//    println("$this [${this.toString(radix = 2)}] -> $result")
+
+    return result
 }
 
 internal fun Int.hex(): String {

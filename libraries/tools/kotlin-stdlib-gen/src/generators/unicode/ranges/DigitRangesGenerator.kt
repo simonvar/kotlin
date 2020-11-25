@@ -85,7 +85,7 @@ internal class DigitRangesGenerator(
         """.trimIndent()
 
     private fun isDigitImpl(): String {
-        val rangeStart = writingStrategy.rangeReference("rangeStart")
+        val rangeStart = writingStrategy.rangeRef("rangeStart")
         return """
         /**
          * Returns `true` if this character is a digit.
