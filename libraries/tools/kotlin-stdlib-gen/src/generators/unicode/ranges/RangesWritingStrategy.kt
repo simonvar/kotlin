@@ -115,20 +115,9 @@ internal open class JsRangesWritingStrategy(
         getAt(name, index)
 
     override fun writeRanges(ranges: List<CategorizedRangePattern>, writer: FileWriter) {
-        val shortRanges = ranges.filter { it.rangeLength() < 64 }
-        val longRanges = ranges.filter { it.rangeLength() >= 64 }
-
-        this.writeRange("rangeStart", shortRanges.map { it.rangeStart() }, writer)
+        this.writeRange("rangeStart", ranges.map { it.rangeStart() }, writer)
         writer.appendLine()
-        this.writeShortRangeLength("rangeLength", shortRanges.map { it.rangeLength() }, writer)
-        writer.appendLine()
-        this.writeRange("rangeCategory", shortRanges.map { it.category() }, writer)
-        writer.appendLine()
-        this.writeRange("longRangeStart", longRanges.map { it.rangeStart() }, writer)
-        writer.appendLine()
-        this.writeRange("longRangeLength", longRanges.map { it.rangeLength() }, writer)
-        writer.appendLine()
-        this.writeRange("longRangeCategory", longRanges.map { it.category() }, writer)
+        this.writeRange("rangeCategory", ranges.map { it.category() }, writer)
     }
 
     override fun getCategoryValue(): String = """
@@ -137,26 +126,11 @@ internal open class JsRangesWritingStrategy(
          */
         internal fun Char.getCategoryValue(): Int {
             val ch = this.toInt()
-            var value = CharCategory.UNASSIGNED.value
-            
-            var index = ${getIndex("rangeStart", "ch")}
-            var start = ${getAt("rangeStart", "index")}
-            var length = ${shortRangeGetAt("rangeLength", "index")}
-            
-            if (ch < start + length) {
-                val code = ${getAt("rangeCategory", "index")}
-                value = categoryValueFrom(code, ch)
-            } else {
-                index = ${getIndex("longRangeStart", "ch")}
-                start = ${getAt("longRangeStart", "index")}
-                length = ${getAt("longRangeLength", "index")}
-                
-                if (ch < start + length) {
-                    val code = ${getAt("longRangeCategory", "index")}
-                    value = categoryValueFrom(code, ch)
-                }
-            }
-            
+
+            val index = ${getIndex("rangeStart", "ch")}
+            val code = ${getAt("rangeCategory", "index")}
+            val value = categoryValueFrom(code, ch)
+
             return if (value == $UNASSIGNED_CATEGORY_VALUE_REPLACEMENT) CharCategory.UNASSIGNED.value else value
         }
         """.trimIndent()

@@ -54,7 +54,9 @@ internal class CategorizedConsequentPattern(
     }
 
     override fun category(): Int {
-        return categoryCodeToValue[categoryCode]!!
+        val value = categoryCodeToValue[categoryCode]!!
+        check(value != 0)
+        return value
     }
 
     override fun categoryCodeOf(charCode: Int): String {

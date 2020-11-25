@@ -27,12 +27,12 @@ internal class CharCategoryRangesGenerator(
 
         require(charCode == 0 || ranges.isNotEmpty())
 
-        if (ranges.isEmpty() || name.endsWith(", First>")) {
+        if (ranges.isEmpty()) {
             ranges.add(CategorizedConsequentPattern(charCode, categoryCode))
             return
         }
 
-        var lastRange = ranges.last()
+        val lastRange = ranges.last()
 
         if (name.endsWith(", Last>")) {
             check(lastRange is CategorizedConsequentPattern)
@@ -41,25 +41,23 @@ internal class CharCategoryRangesGenerator(
             return
         }
 
-        fun append(charCode: Int, categoryCode: String) {
-            val newLastRange = lastRange.append(charCode, categoryCode)
-            if (newLastRange != null) {
-                lastRange = newLastRange
-                ranges[ranges.lastIndex] = lastRange
-            } else {
-//                println(lastRange)
-                lastRange = CategorizedConsequentPattern(charCode, categoryCode)
-                ranges.add(lastRange)
-            }
+        for (unassignedCharCode in lastRange.rangeEnd() + 1 until charCode) {
+            appendChar(unassignedCharCode, CharCategory.UNASSIGNED.code)
         }
 
-        for (unassignedCharCode in lastRange.rangeEnd() + 1 until charCode) {
-            append(unassignedCharCode, CharCategory.UNASSIGNED.code)
+        if (name.endsWith(", First>")) {
+            ranges.add(CategorizedConsequentPattern(charCode, categoryCode))
+            return
         }
-        append(charCode, categoryCode)
+
+        appendChar(charCode, categoryCode)
     }
 
     override fun close() {
+        for (unassignedCharCode in ranges.last().rangeEnd() + 1..0xffff) {
+            appendChar(unassignedCharCode, CharCategory.UNASSIGNED.code)
+        }
+
         FileWriter(outputFile).use { writer ->
             writer.writeHeader(outputFile, "kotlin.text")
             writer.appendLine()
@@ -69,6 +67,15 @@ internal class CharCategoryRangesGenerator(
             writer.appendLine(writingStrategy.categoryValueFrom())
             writer.appendLine()
             writer.appendLine(writingStrategy.getCategoryValue())
+        }
+    }
+
+    private fun appendChar(charCode: Int, categoryCode: String) {
+        val newLastRange = ranges.last().append(charCode, categoryCode)
+        if (newLastRange != null) {
+            ranges[ranges.lastIndex] = newLastRange
+        } else {
+            ranges.add(CategorizedConsequentPattern(charCode, categoryCode))
         }
     }
 
