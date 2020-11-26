@@ -92,7 +92,11 @@ internal class LetterRangesGenerator(
             val rangeStart = $rangeStart[index]
             val rangeEnd = $rangeEnd[index]
 
-            val isGapPattern = rangeEnd > 0xffff
+            if (rangeEnd <= 0xffff) {
+                return ch <= rangeEnd
+            }
+
+            val isGapPattern = rangeEnd <= 0x3fff_ffff
             if (isGapPattern) {
                 if (ch > rangeEnd and 0xffff) {
                     return false
@@ -103,16 +107,12 @@ internal class LetterRangesGenerator(
                 return chDistance < charsBeforeGap || chDistance >= charsBeforeGap + gapLength
             }
 
-            val isBitPattern = rangeEnd < 0
-            if (isBitPattern) {
-                if (ch > rangeStart + 31) {
-                    return false
-                }
-                val shift = ch - rangeStart - 1
-                return (ch == rangeStart) || rangeEnd and (1 shl shift) > 0
+            // isBitPattern
+            if (ch > rangeStart + 30) {
+                return false
             }
-
-            return ch <= rangeEnd
+            val shift = ch - rangeStart - 1
+            return (ch == rangeStart) || rangeEnd and (1 shl shift) > 0
         }
         """.trimIndent()
     }

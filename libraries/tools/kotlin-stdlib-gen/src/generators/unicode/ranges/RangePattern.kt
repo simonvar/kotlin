@@ -52,10 +52,10 @@ internal class ConsequentPattern(val start: Int) : RangePattern {
 /**
  * A range of consequent chars that starts with a letter and ends with a letter, and contains a single consequent not-letter chars range.
  *
- * Divide the returned [rangeEnd] int value in 3 parts as follows: 0x7f_ff_ffff
+ * Divide the returned [rangeEnd] int value in 3 parts as follows: 0x3f_ff_ffff
  * The right-hand side part (ffff) is the end of the char range - [end]
  * The middle part (ff) is the length of the gap in the char range - [gapLength]
- * The left-hand side part (7f) is the number of letters before the gap in the char range - [charsBeforeGap]
+ * The left-hand side part (3f) is the number of letters before the gap in the char range - [charsBeforeGap]
  */
 private class GapPattern(val start: Int, val charsBeforeGap: Int, val gapLength: Int, var end: Int) : RangePattern {
 
@@ -106,18 +106,18 @@ private class GapPattern(val start: Int, val charsBeforeGap: Int, val gapLength:
         }
 
         private fun isValid(charsBeforeGap: Int, gapLength: Int): Boolean {
-            return charsBeforeGap <= 0x7f && gapLength <= 0xff
+            return charsBeforeGap <= 0x3f && gapLength <= 0xff
         }
     }
 }
 
 /**
- * A range of 32 consequent chars.
+ * A range of 31 consequent chars.
  *
  * The first char in the range is the [start].
  *
- * The returned [rangeEnd] int value describes 31 chars that follow [start] the following way:
- * The leftmost bit (sign bit) is reserved and is 1
+ * The returned [rangeEnd] int value describes 30 chars that follow [start] the following way:
+ * The leftmost bit (right to the sign bit) is reserved and is 1
  * The char that immediately follows [start] is described in the rightmost bit
  * The next char is described in the second (from the right) bit, and so on
  * If a char in the range is a letter, the corresponding bit is set to 1, otherwise the bit is set to 0
@@ -129,7 +129,7 @@ private class BitPattern(val start: Int, private var pattern: Int) : RangePatter
     }
 
     override fun append(charCode: Int): RangePattern? {
-        if (charCode - start <= 31) {
+        if (charCode - start <= 30) {
             val shift = charCode - start - 1
             pattern = pattern or (1 shl shift)
             return this
@@ -149,7 +149,7 @@ private class BitPattern(val start: Int, private var pattern: Int) : RangePatter
         return "BitPattern{" +
                 "start=" + start.hex() +
                 ", pattern=1" + (pattern shl 1 ushr 1).toString(2) +
-                ", end=" + (start + 31).hex() +
+                ", end=" + (start + 30).hex() +
                 "}"
     }
 
@@ -163,13 +163,13 @@ private class BitPattern(val start: Int, private var pattern: Int) : RangePatter
             val bitsAfterFirstGap = ((1 shl range.charsAfterGap) - 1) shl (charsBeforeGap + range.gapLength)
             val shift = charCode - range.start - 1
             val charCodeBit = 1 shl shift
-            val signBit = 1 shl 31
-            val pattern = signBit /*spare bits*/ or charCodeBit /*second gap*/ or bitsAfterFirstGap /*first gap*/ or bitsBeforeFirstGap
+            val patternBit = 1 shl 30
+            val pattern = patternBit /*spare bits*/ or charCodeBit /*second gap*/ or bitsAfterFirstGap /*first gap*/ or bitsBeforeFirstGap
             return BitPattern(range.start, pattern)
         }
 
         private fun isValid(start: Int, charCode: Int): Boolean {
-            return charCode - start <= 31
+            return charCode - start <= 30
         }
     }
 }
