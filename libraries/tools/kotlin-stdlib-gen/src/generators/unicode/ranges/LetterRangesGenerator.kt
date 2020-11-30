@@ -6,7 +6,11 @@
 package generators.unicode.ranges
 
 import generators.requireExistingDir
-import generators.unicode.*
+import generators.unicode.UnicodeDataGenerator
+import generators.unicode.ranges.patterns.ConsequentPattern
+import generators.unicode.ranges.patterns.RangePattern
+import generators.unicode.ranges.writers.LetterRangesWriter
+import generators.unicode.ranges.writers.writeHeader
 import templates.KotlinTarget
 import java.io.File
 import java.io.FileWriter
@@ -16,7 +20,7 @@ internal class LetterRangesGenerator(
     target: KotlinTarget
 ) : UnicodeDataGenerator {
     private val ranges = mutableListOf<RangePattern>()
-    private val writingStrategy = RangesWritingStrategy.of(target, "Letter")
+    private val rangesWriter = LetterRangesWriter(RangesWritingStrategy.of(target, "Letter"))
 
     private val letterCategoryCodes = listOf(
         CharCategory.UPPERCASE_LETTER.code,
@@ -64,56 +68,8 @@ internal class LetterRangesGenerator(
         FileWriter(outputFile).use { writer ->
             writer.writeHeader(outputFile, "kotlin.text")
             writer.appendLine()
-            writer.writeRanges()
-            writer.appendLine()
-            writer.appendLine(isLetterImpl())
+            writer.appendLine("// ${ranges.size} ranges totally")
+            rangesWriter.write(ranges, writer)
         }
-    }
-
-    private fun FileWriter.writeRanges() {
-        writingStrategy.beforeWritingRanges(this)
-        writeIntArray("rangeStart", ranges.map { it.rangeStart() }, writingStrategy)
-        appendLine()
-        writeIntArray("rangeEnd", ranges.map { it.rangeEnd() }, writingStrategy)
-        writingStrategy.afterWritingRanges(this)
-    }
-
-    private fun isLetterImpl(): String {
-        val rangeStart = writingStrategy.rangeRef("rangeStart")
-        val rangeEnd = writingStrategy.rangeRef("rangeEnd")
-        return """
-        /**
-         * Returns `true` if this character is a letter.
-         */
-        internal fun Char.isLetterImpl(): Boolean {
-            val ch = this.toInt()
-            val index = binarySearchRange($rangeStart, ch)
-
-            val rangeStart = $rangeStart[index]
-            val rangeEnd = $rangeEnd[index]
-
-            if (rangeEnd <= 0xffff) {
-                return ch <= rangeEnd
-            }
-
-            val isGapPattern = rangeEnd <= 0x3fff_ffff
-            if (isGapPattern) {
-                if (ch > rangeEnd and 0xffff) {
-                    return false
-                }
-                val charsBeforeGap = rangeEnd shr 24
-                val gapLength = (rangeEnd shr 16) and 0xff
-                val chDistance = ch - rangeStart
-                return chDistance < charsBeforeGap || chDistance >= charsBeforeGap + gapLength
-            }
-
-            // isBitPattern
-            if (ch > rangeStart + 30) {
-                return false
-            }
-            val shift = ch - rangeStart - 1
-            return (ch == rangeStart) || rangeEnd and (1 shl shift) > 0
-        }
-        """.trimIndent()
     }
 }

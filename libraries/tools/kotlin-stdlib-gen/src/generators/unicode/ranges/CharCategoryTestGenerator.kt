@@ -5,7 +5,8 @@
 
 package generators.unicode.ranges
 
-import generators.unicode.*
+import generators.unicode.UnicodeDataGenerator
+import generators.unicode.ranges.writers.writeHeader
 import java.io.File
 import java.io.FileWriter
 

@@ -10,6 +10,7 @@ package kotlin.text
 // See: https://github.com/JetBrains/kotlin/tree/master/libraries/stdlib
 //
 
+// 37 ranges totally
 private object Digit {
     // rangeStart.size = 37
     internal val rangeStart = intArrayOf(

@@ -3,9 +3,9 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package generators.unicode.ranges
+package generators.unicode.ranges.patterns
 
-import generators.unicode.*
+import generators.unicode.ranges.writers.hex
 
 internal interface CategorizedRangePattern {
     fun append(charCode: Int, categoryCode: String): CategorizedRangePattern?
@@ -137,7 +137,7 @@ internal class CategorizedAlternatingPattern private constructor(
 /**
  * A range of consequent chars having alternating categories, e.g., [Lu, Ll, Lu, Ll, ...].
  */
-internal class CategorizedPeriodicTrioPattern private constructor(
+private class CategorizedPeriodicTrioPattern private constructor(
     private val start: Int,
     private var end: Int,
     private val categoryCodes: Array<String>

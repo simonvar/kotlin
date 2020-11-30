@@ -10,6 +10,7 @@ package kotlin.text
 // See: https://github.com/JetBrains/kotlin/tree/master/libraries/stdlib
 //
 
+// 165 ranges totally
 private object Letter {
     // rangeStart.size = 165
     internal val rangeStart = intArrayOf(

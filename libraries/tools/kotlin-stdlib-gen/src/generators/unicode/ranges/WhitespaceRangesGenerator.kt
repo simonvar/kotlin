@@ -6,7 +6,9 @@
 package generators.unicode.ranges
 
 import generators.requireExistingDir
-import generators.unicode.*
+import generators.unicode.UnicodeDataGenerator
+import generators.unicode.ranges.writers.WhitespaceRangesWriter
+import generators.unicode.ranges.writers.writeHeader
 import java.io.File
 import java.io.FileWriter
 
@@ -16,6 +18,7 @@ internal class WhitespaceRangesGenerator(
     // Cc CONTROL spaces
     private val start = mutableListOf(0x9, 0x1C)
     private val end = mutableListOf(0xD, 0x1F)
+    private val rangesWriter = WhitespaceRangesWriter()
 
     private val whitespaceCategories = listOf(
         CharCategory.SPACE_SEPARATOR.code,
@@ -48,41 +51,7 @@ internal class WhitespaceRangesGenerator(
         FileWriter(outputFile).use { writer ->
             writer.writeHeader(outputFile, "kotlin.text")
             writer.appendLine()
-            writer.appendLine(isWhitespaceImpl())
+            rangesWriter.write(start, end, writer)
         }
-    }
-
-    private fun isWhitespaceImpl(): String {
-        val checkSeparator = "\n${"    ".repeat(5)}|| "
-        return """
-        /**
-         * Returns `true` if this character is a whitespace.
-         */
-        internal fun Char.isWhitespaceImpl(): Boolean {
-            val ch = this.toInt()
-            return ${rangeChecks("ch").joinToString(checkSeparator)}
-        }
-        """.trimIndent()
-    }
-
-    private fun rangeChecks(ch: String): List<String> {
-        val result = mutableListOf<String>()
-        for (i in 0 until start.size) {
-            val rangeStart = start[i]
-            val rangeEnd = end[i]
-            when (rangeStart) {
-                rangeEnd -> {
-                    result.add("$ch == ${rangeStart.hex()}")
-                }
-                rangeEnd - 1 -> {
-                    result.add("$ch == ${rangeStart.hex()}")
-                    result.add("$ch == ${rangeEnd.hex()}")
-                }
-                else -> {
-                    result.add("$ch in ${rangeStart.hex()}..${rangeEnd.hex()}")
-                }
-            }
-        }
-        return result
     }
 }

@@ -6,8 +6,13 @@
 package generators.unicode.ranges
 
 import generators.requireExistingDir
-import generators.unicode.*
+import generators.unicode.UnicodeDataGenerator
+import generators.unicode.ranges.patterns.CategorizedConsequentPattern
+import generators.unicode.ranges.patterns.CategorizedRangePattern
+import generators.unicode.ranges.patterns.rangeLength
+import generators.unicode.ranges.writers.*
 import templates.KotlinTarget
+import templates.Platform
 import java.io.File
 import java.io.FileWriter
 
@@ -16,7 +21,9 @@ internal class CharCategoryRangesGenerator(
     target: KotlinTarget
 ) : UnicodeDataGenerator {
     private val ranges = mutableListOf<CategorizedRangePattern>()
-    private val writingStrategy = RangesWritingStrategy.of(target, "Category", encoding = RangeEncoding.VARIABLE_LENGTH_BASE64)
+    private val rangesWriter = RangesWritingStrategy.of(target, "Category").let {
+        if (target.platform == Platform.JS) VarLenBase64CategoryRangesWriter(it) else CategoryRangesWriter(it)
+    }
 
     init {
         outputFile.parentFile.requireExistingDir()
@@ -62,11 +69,7 @@ internal class CharCategoryRangesGenerator(
             writer.writeHeader(outputFile, "kotlin.text")
             writer.appendLine()
             writer.appendLine("// ${ranges.size} ranges totally")
-            writer.writeRanges()
-            writer.appendLine()
-            writer.appendLine(writingStrategy.categoryValueFrom())
-            writer.appendLine()
-            writer.appendLine(writingStrategy.getCategoryValue())
+            rangesWriter.write(ranges, writer)
         }
     }
 
@@ -77,11 +80,5 @@ internal class CharCategoryRangesGenerator(
         } else {
             ranges.add(CategorizedConsequentPattern(charCode, categoryCode))
         }
-    }
-
-    private fun FileWriter.writeRanges() {
-        writingStrategy.beforeWritingRanges(this)
-        writingStrategy.writeRanges(ranges, this)
-        writingStrategy.afterWritingRanges(this)
     }
 }

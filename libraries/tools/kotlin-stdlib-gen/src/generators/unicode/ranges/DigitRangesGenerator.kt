@@ -6,7 +6,9 @@
 package generators.unicode.ranges
 
 import generators.requireExistingDir
-import generators.unicode.*
+import generators.unicode.UnicodeDataGenerator
+import generators.unicode.ranges.writers.DigitRangesWriter
+import generators.unicode.ranges.writers.writeHeader
 import templates.KotlinTarget
 import java.io.File
 import java.io.FileWriter
@@ -17,7 +19,7 @@ internal class DigitRangesGenerator(
 ) : UnicodeDataGenerator {
     private val start = mutableListOf<Int>()
     private val end = mutableListOf<Int>()
-    private val writingStrategy = RangesWritingStrategy.of(target, "Digit")
+    private val rangesWriter = DigitRangesWriter(RangesWritingStrategy.of(target, "Digit"))
 
     init {
         outputFile.parentFile.requireExistingDir()
@@ -50,52 +52,8 @@ internal class DigitRangesGenerator(
         FileWriter(outputFile).use { writer ->
             writer.writeHeader(outputFile, "kotlin.text")
             writer.appendLine()
-            writer.writeRanges()
-            writer.appendLine()
-            writer.appendLine(binarySearch())
-            writer.appendLine()
-            writer.appendLine(isDigitImpl())
+            writer.appendLine("// ${start.size} ranges totally")
+            rangesWriter.write(start, writer)
         }
-    }
-
-    private fun FileWriter.writeRanges() {
-        writingStrategy.beforeWritingRanges(this)
-        writeIntArray("rangeStart", start, writingStrategy)
-        writingStrategy.afterWritingRanges(this)
-    }
-
-    private fun binarySearch(): String = """
-        internal fun binarySearchRange(array: IntArray, needle: Int): Int {
-            var bottom = 0
-            var top = array.size - 1
-            var middle = -1
-            var value = 0
-            while (bottom <= top) {
-                middle = (bottom + top) / 2
-                value = array[middle]
-                if (needle > value)
-                    bottom = middle + 1
-                else if (needle == value)
-                    return middle
-                else
-                    top = middle - 1
-            }
-            return middle - (if (needle < value) 1 else 0)
-        }
-        """.trimIndent()
-
-    private fun isDigitImpl(): String {
-        val rangeStart = writingStrategy.rangeRef("rangeStart")
-        return """
-        /**
-         * Returns `true` if this character is a digit.
-         */
-        internal fun Char.isDigitImpl(): Boolean {
-            val ch = this.toInt()
-            val index = binarySearchRange($rangeStart, ch)
-            val high = $rangeStart[index] + 9
-            return ch <= high
-        }
-        """.trimIndent()
     }
 }
