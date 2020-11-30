@@ -52,11 +52,7 @@ internal open class LetterRangesWriter(protected val strategy: RangesWritingStra
             val rangeStart = ${startAt("index")}
             val rangeEnd = ${endAt("index")}
 
-            if (rangeEnd <= 0xffff) {
-                return ch <= rangeEnd
-            }
-
-            val isGapPattern = rangeEnd <= 0x3fff_ffff
+            val isGapPattern = rangeEnd > 0xffff
             if (isGapPattern) {
                 if (ch > rangeEnd and 0xffff) {
                     return false
@@ -67,12 +63,16 @@ internal open class LetterRangesWriter(protected val strategy: RangesWritingStra
                 return chDistance < charsBeforeGap || chDistance >= charsBeforeGap + gapLength
             }
 
-            // isBitPattern
-            if (ch > rangeStart + 30) {
-                return false
+            val isBitPattern = rangeEnd < 0
+            if (isBitPattern) {
+                if (ch > rangeStart + 31) {
+                    return false
+                }
+                val shift = ch - rangeStart - 1
+                return (ch == rangeStart) || rangeEnd and (1 shl shift) > 0
             }
-            val shift = ch - rangeStart - 1
-            return (ch == rangeStart) || rangeEnd and (1 shl shift) > 0
+
+            return ch <= rangeEnd
         }
         """.trimIndent()
 
