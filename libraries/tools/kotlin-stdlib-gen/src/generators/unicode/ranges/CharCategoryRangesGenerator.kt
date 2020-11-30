@@ -65,6 +65,26 @@ internal class CharCategoryRangesGenerator(
             appendChar(unassignedCharCode, CharCategory.UNASSIGNED.code)
         }
 
+        var index = ranges.lastIndex
+        while (index > 0) {
+            val previous = ranges[index - 1]
+            val previousEnd = previous.rangeEnd()
+            val current = ranges[index]
+            val newCurrent = current.prepend(previousEnd, previous.categoryCodeOf(previousEnd))
+            if (newCurrent != null) {
+                ranges[index] = newCurrent
+                val newPrevious = previous.removeLast()
+                if (newPrevious != null) {
+                    ranges[index - 1] = newPrevious
+                } else {
+                    ranges.removeAt(index - 1)
+                    index--
+                }
+            } else {
+                index--
+            }
+        }
+
         FileWriter(outputFile).use { writer ->
             writer.writeHeader(outputFile, "kotlin.text")
             writer.appendLine()

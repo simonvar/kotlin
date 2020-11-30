@@ -9,6 +9,8 @@ import generators.unicode.ranges.writers.hex
 
 internal interface CategorizedRangePattern {
     fun append(charCode: Int, categoryCode: String): CategorizedRangePattern?
+    fun prepend(charCode: Int, categoryCode: String): CategorizedRangePattern?
+    fun removeLast(): CategorizedRangePattern?
     fun rangeStart(): Int
     fun rangeEnd(): Int
     fun category(): Int
@@ -25,11 +27,10 @@ private val categoryCodeToValue = CharCategory.values().associateBy({ it.code },
  * A range of consequent chars having the same category
  */
 internal class CategorizedConsequentPattern(
-    val start: Int,
+    private var start: Int,
     val categoryCode: String
 ) : CategorizedRangePattern {
-    var end = start
-        private set
+    private var end = start
 
     fun setEnd(end: Int) {
         assert(this.end < end)
@@ -43,6 +44,23 @@ internal class CategorizedConsequentPattern(
             return this
         }
         return CategorizedAlternatingPattern.from(this, charCode, categoryCode)
+    }
+
+    override fun prepend(charCode: Int, categoryCode: String): CategorizedConsequentPattern? {
+        require(charCode == start - 1)
+        if (categoryCode == this.categoryCode) {
+            start = charCode
+            return this
+        }
+        return null
+    }
+
+    override fun removeLast(): CategorizedRangePattern? {
+        if (rangeLength() > 1) {
+            end--
+            return this
+        }
+        return null
     }
 
     override fun rangeStart(): Int {
@@ -79,9 +97,9 @@ internal class CategorizedConsequentPattern(
  * A range of consequent chars having alternating categories, e.g., [Lu, Ll, Lu, Ll, ...].
  */
 internal class CategorizedAlternatingPattern private constructor(
-    private val start: Int,
+    private var start: Int,
     private var end: Int,
-    internal val evenOddCategoryCodes: Array<String>
+    private val evenOddCategoryCodes: Array<String>
 ) : CategorizedRangePattern {
     override fun append(charCode: Int, categoryCode: String): CategorizedRangePattern? {
         require(charCode == end + 1)
@@ -90,6 +108,23 @@ internal class CategorizedAlternatingPattern private constructor(
             return this
         }
         return CategorizedPeriodicTrioPattern.from(this, charCode, categoryCode)
+    }
+
+    override fun prepend(charCode: Int, categoryCode: String): CategorizedAlternatingPattern? {
+        require(charCode == start - 1)
+        if (categoryCode == evenOddCategoryCodes[charCode % 2]) {
+            start = charCode
+            return this
+        }
+        return null
+    }
+
+    override fun removeLast(): CategorizedRangePattern? {
+        if (rangeLength() > 2) {
+            end--
+            return this
+        }
+        return CategorizedConsequentPattern(start, categoryCodeOf(start))
     }
 
     override fun rangeStart(): Int {
@@ -135,10 +170,10 @@ internal class CategorizedAlternatingPattern private constructor(
 }
 
 /**
- * A range of consequent chars having alternating categories, e.g., [Lu, Ll, Lu, Ll, ...].
+ * A range of consequent chars having three periodic categories, e.g., [Lu, Ll, Lo, Lu, ...].
  */
 private class CategorizedPeriodicTrioPattern private constructor(
-    private val start: Int,
+    private var start: Int,
     private var end: Int,
     private val categoryCodes: Array<String>
 ) : CategorizedRangePattern {
@@ -149,6 +184,23 @@ private class CategorizedPeriodicTrioPattern private constructor(
             return this
         }
         return null
+    }
+
+    override fun prepend(charCode: Int, categoryCode: String): CategorizedRangePattern? {
+        require(charCode == start - 1)
+        if (categoryCode == categoryCodes[charCode % 3]) {
+            start = charCode
+            return this
+        }
+        return null
+    }
+
+    override fun removeLast(): CategorizedRangePattern? {
+        if (rangeLength() > 3) {
+            end--
+            return this
+        }
+        return CategorizedConsequentPattern(start, categoryCodeOf(start)).append(start + 1, categoryCodeOf(start + 1))!!
     }
 
     override fun rangeStart(): Int {
