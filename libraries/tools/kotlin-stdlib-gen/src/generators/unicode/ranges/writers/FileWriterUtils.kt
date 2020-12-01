@@ -42,30 +42,11 @@ internal fun FileWriter.writeIntArray(
     appendLine()
 }
 
-internal fun FileWriter.writeInBase64(
-    name: String,
-    elements: List<Int>,
-    strategy: RangesWritingStrategy
-) {
-    val bytes = elements.flatMap { listOf((it shr 8).toByte(), it.toByte()) }.toByteArray()
-    val base64String = java.util.Base64.getEncoder().encodeToString(bytes)
-
-    appendLine("${strategy.indentation}// $name.length = ${base64String.length}")
-    appendLine("${strategy.indentation}${strategy.rangesVisibilityModifier} const val $name = \"$base64String\"")
-}
-
 internal const val TO_BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
-internal fun FileWriter.writeInVarLenBase64(
-    name: String,
-    elements: List<Int>,
-    strategy: RangesWritingStrategy
-) {
-    val base64 = elements.flatMap { it.to6Bits() }
-    val base64String = base64.joinToString(separator = "") { TO_BASE64[it].toString() }
-
-    appendLine("${strategy.indentation}// $name.length = ${base64String.length}")
-    appendLine("${strategy.indentation}${strategy.rangesVisibilityModifier} const val $name = \"$base64String\"")
+internal fun List<Int>.toVarLenBase64(): String {
+    val base64 = flatMap { it.to6Bits() }
+    return base64.joinToString(separator = "") { TO_BASE64[it].toString() }
 }
 
 private fun Int.to6Bits(): List<Int> {

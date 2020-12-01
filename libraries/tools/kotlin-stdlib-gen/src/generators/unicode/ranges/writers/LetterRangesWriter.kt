@@ -16,7 +16,7 @@ internal open class LetterRangesWriter(protected val strategy: RangesWritingStra
         writeRangeStart(ranges.map { it.rangeStart() }, writer)
         writer.appendLine()
         writeRangeEnd(ranges.map { it.rangeEnd() }, writer)
-        writeInit(ranges.size, writer)
+        writeInit(ranges, writer)
 
         afterWritingRanges(writer)
     }
@@ -39,7 +39,7 @@ internal open class LetterRangesWriter(protected val strategy: RangesWritingStra
         writer.writeIntArray("rangeEnd", elements, strategy)
     }
 
-    protected open fun writeInit(rangeCount: Int, writer: FileWriter) {}
+    protected open fun writeInit(ranges: List<RangePattern>, writer: FileWriter) {}
 
     private fun isLetterImpl(): String = """
         /**
@@ -86,48 +86,5 @@ internal open class LetterRangesWriter(protected val strategy: RangesWritingStra
 
     protected open fun endAt(index: String): String {
         return "${strategy.rangeRef("rangeEnd")}[$index]"
-    }
-}
-
-internal class VarLenBase64LetterRangesWriter(strategy: RangesWritingStrategy) : LetterRangesWriter(strategy) {
-
-    override fun writeRangeStart(elements: List<Int>, writer: FileWriter) {
-        writer.writeInVarLenBase64("rangeStart", elements, strategy);
-    }
-
-    override fun writeRangeEnd(elements: List<Int>, writer: FileWriter) {
-        writer.writeInVarLenBase64("rangeEnd", elements, strategy);
-    }
-
-    override fun writeInit(rangeCount: Int, writer: FileWriter) {
-        writer.appendLine(
-            """
-            
-            internal val decodedRangeStart: IntArray
-            internal val decodedRangeEnd: IntArray
-            
-            init {
-                val toBase64 = "$TO_BASE64"
-                val fromBase64 = IntArray(128)
-                for (i in toBase64.indices) {
-                    fromBase64[toBase64[i].toInt()] = i
-                }
-                decodedRangeStart = decodeVarLenBase64(rangeStart, fromBase64, $rangeCount)
-                decodedRangeEnd = decodeVarLenBase64(rangeEnd, fromBase64, $rangeCount)
-            }
-            """.replaceIndent(strategy.indentation)
-        )
-    }
-
-    override fun indexOf(charCode: String): String {
-        return "binarySearchRange(${strategy.rangeRef("decodedRangeStart")}, $charCode)"
-    }
-
-    override fun startAt(index: String): String {
-        return "${strategy.rangeRef("decodedRangeStart")}[$index]"
-    }
-
-    override fun endAt(index: String): String {
-        return "${strategy.rangeRef("decodedRangeEnd")}[$index]"
     }
 }

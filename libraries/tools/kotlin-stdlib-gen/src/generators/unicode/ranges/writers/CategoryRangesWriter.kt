@@ -19,7 +19,7 @@ internal open class CategoryRangesWriter(protected val strategy: RangesWritingSt
         writer.appendLine()
         writeRangeCategory(ranges.map { it.category() }, writer)
         writer.appendLine()
-        writeInit(ranges.size, writer)
+        writeInit(ranges, writer)
 
         afterWritingRanges(writer)
     }
@@ -45,7 +45,7 @@ internal open class CategoryRangesWriter(protected val strategy: RangesWritingSt
         writer.writeIntArray("rangeCategory", elements, strategy)
     }
 
-    protected open fun writeInit(rangeCount: Int, writer: FileWriter) {}
+    protected open fun writeInit(ranges: List<CategorizedRangePattern>, writer: FileWriter) {}
 
     private fun categoryValueFrom(): String = """
         private fun categoryValueFrom(code: Int, ch: Int): Int {
@@ -94,7 +94,12 @@ internal class VarLenBase64CategoryRangesWriter(strategy: RangesWritingStrategy)
         writer.appendLine(decodeVarLenBase64())
     }
 
-    override fun writeInit(rangeCount: Int, writer: FileWriter) {
+    override fun writeInit(ranges: List<CategorizedRangePattern>, writer: FileWriter) {
+        val length = ranges.map { it.rangeStart() }.zipWithNext { a, b -> b - a }
+        val rangeLength = length.toVarLenBase64()
+
+        val rangeCategory = ranges.map { it.category() }.toVarLenBase64()
+
         writer.appendLine(
             """
             internal val decodedRangeStart: IntArray
@@ -106,25 +111,27 @@ internal class VarLenBase64CategoryRangesWriter(strategy: RangesWritingStrategy)
                 for (i in toBase64.indices) {
                     fromBase64[toBase64[i].toInt()] = i
                 }
-                val length = decodeVarLenBase64(rangeLength, fromBase64, ${rangeCount - 1})
+                
+                // rangeLength.length = ${rangeLength.length}
+                val rangeLength = "$rangeLength"
+                val length = decodeVarLenBase64(rangeLength, fromBase64, ${ranges.size - 1})
                 val start = IntArray(length.size + 1)
                 for (i in length.indices) {
                     start[i + 1] = start[i] + length[i]
                 }
                 decodedRangeStart = start
-                decodedRangeCategory = decodeVarLenBase64(rangeCategory, fromBase64, $rangeCount)
+                
+                // rangeCategory.length = ${rangeCategory.length}
+                val rangeCategory = "$rangeCategory"
+                decodedRangeCategory = decodeVarLenBase64(rangeCategory, fromBase64, ${ranges.size})
             }
             """.replaceIndent(strategy.indentation)
         )
     }
 
-    override fun writeRangeStart(elements: List<Int>, writer: FileWriter) {
-        val length = elements.zipWithNext { a, b -> b - a }
-        writer.writeInVarLenBase64("rangeLength", length, strategy)
-    }
+    override fun writeRangeStart(elements: List<Int>, writer: FileWriter) {}
 
-    override fun writeRangeCategory(elements: List<Int>, writer: FileWriter) =
-        writer.writeInVarLenBase64("rangeCategory", elements, strategy)
+    override fun writeRangeCategory(elements: List<Int>, writer: FileWriter) {}
 
     private fun decodeVarLenBase64() = """
         internal fun decodeVarLenBase64(base64: String, fromBase64: IntArray, resultLength: Int): IntArray {
