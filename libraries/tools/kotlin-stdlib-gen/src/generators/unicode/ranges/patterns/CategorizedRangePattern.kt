@@ -7,13 +7,52 @@ package generators.unicode.ranges.patterns
 
 import generators.unicode.ranges.writers.hex
 
+/**
+ * A range of consequent chars that fit within a particular pattern.
+ */
 internal interface CategorizedRangePattern {
+    /**
+     * Appends the [charCode] to this range pattern.
+     * Returns this instance if the [charCode] with the specified [categoryCode] could be accommodated within this pattern,
+     * or a new pattern containing all chars in this pattern and the [charCode],
+     * or `null` if no pattern could accommodate all chars in this pattern along with [charCode].
+     */
     fun append(charCode: Int, categoryCode: String): CategorizedRangePattern?
+
+    /**
+     * Prepends the [charCode] to this range pattern.
+     * Returns this instance if the [charCode] with the specified [categoryCode] could be accommodated within this pattern,
+     * or `null` if [charCode] doesn't fit this range.
+     *
+     * Note that unlike the [append] function, this function doesn't create a new pattern.
+     */
     fun prepend(charCode: Int, categoryCode: String): CategorizedRangePattern?
+
+    /**
+     * Removes the last char in this range.
+     * Returns a simpler pattern if it was possible to accommodate the remaining chars in that pattern, or this pattern otherwise.
+     */
     fun removeLast(): CategorizedRangePattern?
+
+    /**
+     * Char code of the first char in this range.
+     */
     fun rangeStart(): Int
+
+    /**
+     * Char code of the last char in this range.
+     */
     fun rangeEnd(): Int
+
+    /**
+     * An integer value that contains information about the category of each char in this range.
+     */
     fun category(): Int
+
+    /**
+     * Returns category code of the char with the specified [charCode].
+     * Throws an exception if the [charCode] is not in `rangeStart()..rangeEnd()`.
+     */
     fun categoryCodeOf(charCode: Int): String
 }
 

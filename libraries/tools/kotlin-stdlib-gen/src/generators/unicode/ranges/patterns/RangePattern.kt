@@ -7,9 +7,26 @@ package generators.unicode.ranges.patterns
 
 import generators.unicode.ranges.writers.hex
 
+/**
+ * A range of consequent chars
+ */
 internal interface RangePattern {
+    /**
+     * Appends the [charCode] to this range pattern.
+     * Returns this instance if the [charCode] could be accommodated within this pattern,
+     * or a new pattern containing all chars in this pattern and the [charCode],
+     * or `null` if no pattern could accommodate all chars in this pattern along with [charCode].
+     */
     fun append(charCode: Int): RangePattern?
+
+    /**
+     * Char code of the first char in this range.
+     */
     fun rangeStart(): Int
+
+    /**
+     * An integer value that contains information about the end of this range as well as the pattern type.
+     */
     fun rangeEnd(): Int
 }
 
