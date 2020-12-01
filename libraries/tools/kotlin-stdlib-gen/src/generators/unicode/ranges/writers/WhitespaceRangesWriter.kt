@@ -13,8 +13,7 @@ internal class WhitespaceRangesWriter {
     }
 
     private fun isWhitespaceImpl(rangeStart: List<Int>, rangeEnd: List<Int>): String {
-        val checkSeparator = "\n${"    ".repeat(5)}|| "
-        val checks = rangeChecks(rangeStart, rangeEnd, "ch").joinToString(checkSeparator)
+        val checks = rangeChecks(rangeStart, rangeEnd, "ch")
         return """
         /**
          * Returns `true` if this character is a whitespace.
@@ -26,24 +25,38 @@ internal class WhitespaceRangesWriter {
         """.trimIndent()
     }
 
-    private fun rangeChecks(rangeStart: List<Int>, rangeEnd: List<Int>, ch: String): List<String> {
-        val result = mutableListOf<String>()
+    private fun rangeChecks(rangeStart: List<Int>, rangeEnd: List<Int>, ch: String): String {
+        val tab = "    "
+        var tabCount = 5
+        val builder = StringBuilder()
+
         for (i in rangeStart.indices) {
+            if (i != 0) {
+                builder.append(tab.repeat(tabCount)).append("|| ")
+            }
+
             val start = rangeStart[i]
             val end = rangeEnd[i]
             when (start) {
                 end -> {
-                    result.add("$ch == ${start.hex()}")
+                    if (start > 0x1000 && tabCount == 5) {
+                        builder.appendLine("$ch > 0x1000 && (")
+                        tabCount = 6
+                        builder.append(tab.repeat(tabCount))
+                    }
+                    builder.appendLine("$ch == ${start.hex()}")
                 }
                 end - 1 -> {
-                    result.add("$ch == ${start.hex()}")
-                    result.add("$ch == ${end.hex()}")
+                    builder.appendLine("$ch == ${start.hex()}")
+                    builder.append(tab.repeat(tabCount)).append("|| ")
+                    builder.appendLine("$ch == ${end.hex()}")
                 }
                 else -> {
-                    result.add("$ch in ${start.hex()}..${end.hex()}")
+                    builder.appendLine("$ch in ${start.hex()}..${end.hex()}")
                 }
             }
         }
-        return result
+
+        return builder.append(tab.repeat(5)).append(")").toString()
     }
 }
