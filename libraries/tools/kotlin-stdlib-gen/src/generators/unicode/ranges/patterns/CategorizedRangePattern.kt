@@ -30,9 +30,20 @@ internal interface CategorizedRangePattern {
 
     /**
      * Removes the last char in this range.
-     * Returns a simpler pattern if it was possible to accommodate the remaining chars in that pattern, or this pattern otherwise.
+     * Returns a simpler pattern if it was possible to accommodate the remaining chars in that pattern,
+     * or `null` if this range contained a single char,
+     * or this pattern otherwise.
      */
-    fun removeLast(): CategorizedRangePattern?
+    fun removeLast(): CategorizedRangePattern? {
+        if (rangeLength() == 1) {
+            return null
+        }
+        var pattern: CategorizedRangePattern = CategorizedConsequentPattern(rangeStart(), categoryCodeOf(rangeStart()))
+        for (charCode in rangeStart() + 1 until rangeEnd()) {
+            pattern = pattern.append(charCode, categoryCodeOf(charCode))!!
+        }
+        return pattern
+    }
 
     /**
      * Char code of the first char in this range.
@@ -94,14 +105,6 @@ internal class CategorizedConsequentPattern(
         return null
     }
 
-    override fun removeLast(): CategorizedRangePattern? {
-        if (rangeLength() > 1) {
-            end--
-            return this
-        }
-        return null
-    }
-
     override fun rangeStart(): Int {
         return start
     }
@@ -156,14 +159,6 @@ internal class CategorizedAlternatingPattern private constructor(
             return this
         }
         return null
-    }
-
-    override fun removeLast(): CategorizedRangePattern? {
-        if (rangeLength() > 2) {
-            end--
-            return this
-        }
-        return CategorizedConsequentPattern(start, categoryCodeOf(start))
     }
 
     override fun rangeStart(): Int {
@@ -234,14 +229,6 @@ private class CategorizedPeriodicTrioPattern private constructor(
         return null
     }
 
-    override fun removeLast(): CategorizedRangePattern? {
-        if (rangeLength() > 3) {
-            end--
-            return this
-        }
-        return CategorizedConsequentPattern(start, categoryCodeOf(start)).append(start + 1, categoryCodeOf(start + 1))!!
-    }
-
     override fun rangeStart(): Int {
         return start
     }
@@ -291,6 +278,8 @@ private fun Array<String>.fill(
     charCode: Int,
     categoryCode: String
 ): Boolean {
+    require(charCode == range.rangeEnd() + 1)
+
     fun fill(charCode: Int, categoryCode: String): Boolean {
         val expected = this[indexOfCharCode(charCode)]
         if (expected.isNotEmpty() && expected != categoryCode) return false
@@ -300,9 +289,6 @@ private fun Array<String>.fill(
 
     for (ch in range.rangeStart()..range.rangeEnd()) {
         if (!fill(ch, range.categoryCodeOf(ch))) return false
-    }
-    for (ch in range.rangeEnd() + 1 until charCode) {
-        if (!fill(ch, CharCategory.UNASSIGNED.code)) return false
     }
     if (!fill(charCode, categoryCode)) return false
 
