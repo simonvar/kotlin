@@ -96,43 +96,34 @@ class CharCategoryTest {
             val charCode = char.toInt().toString(radix = 16).padStart(length = 4, padChar = '0')
             val expectedCategoryCode = properties?.categoryCode ?: CharCategory.UNASSIGNED.code
 
-            assertEquals(
-                expected = expectedCategoryCode,
-                actual = char.category.code,
-                "Char:[${"$"}char] with code:[${"$"}charCode] has category [${"$"}expectedCategoryCode] in Unicode, but [${"$"}{char.category.code}] in Kotlin"
-            )
+            fun <T> test(expected: T, actual: T, name: String) {
+                assertEquals(expected, actual, "Char:[${"$"}char] with code:[${"$"}charCode] in Unicode has ${"$"}name = ${"$"}expected, but in Kotlin ${"$"}name = ${"$"}actual")
+            }
+
+            test(expectedCategoryCode, char.category.code, "category")
 
             val expectedIsDigit = isDigit(expectedCategoryCode)
+            test(expectedIsDigit, char.isDigit(), "isDigit()")
+            
             val expectedIsLetter = isLetter(expectedCategoryCode)
+            test(expectedIsLetter, char.isLetter(), "isLetter()")
+            
             val expectedIsLetterOrDigit = expectedIsLetter || expectedIsDigit
+            test(expectedIsLetterOrDigit, char.isLetterOrDigit(), "isLetterOrDigit()")
+            
+            val expectedIsLowerCase = isLowerCase(expectedCategoryCode)
+            test(expectedIsLowerCase, char.isLowerCase(), "isLowerCase()")
 
-            assertEquals(
-                expected = expectedIsDigit,
-                actual = char.isDigit(),
-                "Char:[${"$"}char] with code:[${"$"}charCode] in Unicode has isDigit() = ${"$"}{expectedIsDigit}, but in Kotlin isDigit() = ${"$"}{char.isDigit()}"
-            )
-            assertEquals(
-                expected = expectedIsLetter,
-                actual = char.isLetter(),
-                "Char:[${"$"}char] with code:[${"$"}charCode] in Unicode has isLetter() = ${"$"}{expectedIsLetter}, but in Kotlin isLetter() = ${"$"}{char.isLetter()}"
-            )
-            assertEquals(
-                expected = expectedIsLetterOrDigit,
-                actual = char.isLetterOrDigit(),
-                "Char.isLetterOrDigit() should be true if Char.isLetter() or Char.isDigit() is true"
-            )
+            val expectedIsUpperCase = isUpperCase(expectedCategoryCode)
+            test(expectedIsUpperCase, char.isUpperCase(), "isUpperCase()")
 
             val expectedIsWhitespace = isWhitespace(char, expectedCategoryCode)
-            assertEquals(
-                expected = expectedIsWhitespace,
-                actual = char.isWhitespace(),
-                "Char:[${"$"}char] with code:[${"$"}charCode] in Unicode has isWhitespace() = ${"$"}{expectedIsWhitespace}, but in Kotlin isWhitespace() = ${"$"}{char.isWhitespace()}"
-            )
+            test(expectedIsWhitespace, char.isWhitespace(), "isWhitespace()")
         }
     }
 
     private fun isDigit(categoryCode: String): Boolean {
-        return CharCategory.DECIMAL_DIGIT_NUMBER.code == categoryCode
+        return categoryCode == CharCategory.DECIMAL_DIGIT_NUMBER.code
     }
 
     private fun isLetter(categoryCode: String): Boolean {
@@ -143,6 +134,14 @@ class CharCategoryTest {
             CharCategory.MODIFIER_LETTER,
             CharCategory.OTHER_LETTER
         ).map { it.code }
+    }
+
+    private fun isLowerCase(categoryCode: String): Boolean {
+        return categoryCode == CharCategory.LOWERCASE_LETTER.code
+    }
+
+    private fun isUpperCase(categoryCode: String): Boolean {
+        return categoryCode == CharCategory.UPPERCASE_LETTER.code
     }
 
     private fun isWhitespace(char: Char, categoryCode: String): Boolean {

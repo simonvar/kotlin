@@ -10,6 +10,7 @@ package kotlin.text
 // See: https://github.com/JetBrains/kotlin/tree/master/libraries/stdlib
 //
 
+// 9 ranges totally
 /**
  * Returns `true` if this character is a whitespace.
  */

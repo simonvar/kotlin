@@ -6,20 +6,19 @@
 package generators.unicode.ranges.writers
 
 import generators.unicode.ranges.RangesWritingStrategy
-import generators.unicode.ranges.patterns.CategorizedRangePattern
-import generators.unicode.ranges.patterns.UNASSIGNED_CATEGORY_VALUE_REPLACEMENT
+import generators.unicode.ranges.builders.UNASSIGNED_CATEGORY_VALUE_REPLACEMENT
 import java.io.FileWriter
 
-internal open class CategoryRangesWriter(protected val strategy: RangesWritingStrategy) {
+internal open class CategoryRangesWriter(protected val strategy: RangesWritingStrategy) : RangesWriter {
 
-    fun write(ranges: List<CategorizedRangePattern>, writer: FileWriter) {
+    override fun write(rangeStart: List<Int>, rangeEnd: List<Int>, rangeCategory: List<Int>, writer: FileWriter) {
         beforeWritingRanges(writer)
 
-        writeRangeStart(ranges.map { it.rangeStart() }, writer)
+        writeRangeStart(rangeStart, writer)
         writer.appendLine()
-        writeRangeCategory(ranges.map { it.category() }, writer)
+        writeRangeCategory(rangeCategory, writer)
         writer.appendLine()
-        writeInit(ranges, writer)
+        writeInit(rangeStart, rangeEnd, rangeCategory, writer)
 
         afterWritingRanges(writer)
     }
@@ -45,7 +44,7 @@ internal open class CategoryRangesWriter(protected val strategy: RangesWritingSt
         writer.writeIntArray("rangeCategory", elements, strategy)
     }
 
-    protected open fun writeInit(ranges: List<CategorizedRangePattern>, writer: FileWriter) {}
+    protected open fun writeInit(rangeStart: List<Int>, rangeEnd: List<Int>, rangeCategory: List<Int>, writer: FileWriter) {}
 
     private fun categoryValueFrom(): String = """
         private fun categoryValueFrom(code: Int, ch: Int): Int {
@@ -70,8 +69,9 @@ internal open class CategoryRangesWriter(protected val strategy: RangesWritingSt
             val ch = this.toInt()
 
             val index = ${indexOf("ch")}
+            val start = ${startAt("index")}
             val code = ${categoryAt("index")}
-            val value = categoryValueFrom(code, ch)
+            val value = categoryValueFrom(code, ch - start)
 
             return if (value == $UNASSIGNED_CATEGORY_VALUE_REPLACEMENT) CharCategory.UNASSIGNED.value else value
         }
@@ -79,6 +79,10 @@ internal open class CategoryRangesWriter(protected val strategy: RangesWritingSt
 
     protected open fun indexOf(charCode: String): String {
         return "binarySearchRange(${strategy.rangeRef("rangeStart")}, $charCode)"
+    }
+
+    protected open fun startAt(index: String): String {
+        return "${strategy.rangeRef("rangeStart")}[$index]"
     }
 
     protected open fun categoryAt(index: String): String {
@@ -94,11 +98,11 @@ internal class VarLenBase64CategoryRangesWriter(strategy: RangesWritingStrategy)
         writer.appendLine(decodeVarLenBase64())
     }
 
-    override fun writeInit(ranges: List<CategorizedRangePattern>, writer: FileWriter) {
-        val length = ranges.map { it.rangeStart() }.zipWithNext { a, b -> b - a }
-        val rangeLength = length.toVarLenBase64()
+    override fun writeInit(rangeStart: List<Int>, rangeEnd: List<Int>, rangeCategory: List<Int>, writer: FileWriter) {
+        val rangeLength = rangeStart.zipWithNext { a, b -> b - a }
+        val base64RangeLength = rangeLength.toVarLenBase64()
 
-        val rangeCategory = ranges.map { it.category() }.toVarLenBase64()
+        val base64RangeCategory = rangeCategory.toVarLenBase64()
 
         writer.appendLine(
             """
@@ -112,18 +116,18 @@ internal class VarLenBase64CategoryRangesWriter(strategy: RangesWritingStrategy)
                     fromBase64[toBase64[i].toInt()] = i
                 }
                 
-                // rangeLength.length = ${rangeLength.length}
-                val rangeLength = "$rangeLength"
-                val length = decodeVarLenBase64(rangeLength, fromBase64, ${ranges.size - 1})
+                // rangeLength.length = ${base64RangeLength.length}
+                val rangeLength = "$base64RangeLength"
+                val length = decodeVarLenBase64(rangeLength, fromBase64, ${rangeLength.size})
                 val start = IntArray(length.size + 1)
                 for (i in length.indices) {
                     start[i + 1] = start[i] + length[i]
                 }
                 decodedRangeStart = start
                 
-                // rangeCategory.length = ${rangeCategory.length}
-                val rangeCategory = "$rangeCategory"
-                decodedRangeCategory = decodeVarLenBase64(rangeCategory, fromBase64, ${ranges.size})
+                // rangeCategory.length = ${base64RangeCategory.length}
+                val rangeCategory = "$base64RangeCategory"
+                decodedRangeCategory = decodeVarLenBase64(rangeCategory, fromBase64, ${rangeCategory.size})
             }
             """.replaceIndent(strategy.indentation)
         )
@@ -156,6 +160,10 @@ internal class VarLenBase64CategoryRangesWriter(strategy: RangesWritingStrategy)
 
     override fun indexOf(charCode: String): String {
         return "binarySearchRange(${strategy.rangeRef("decodedRangeStart")}, $charCode)"
+    }
+
+    override fun startAt(index: String): String {
+        return "${strategy.rangeRef("decodedRangeStart")}[$index]"
     }
 
     override fun categoryAt(index: String): String {

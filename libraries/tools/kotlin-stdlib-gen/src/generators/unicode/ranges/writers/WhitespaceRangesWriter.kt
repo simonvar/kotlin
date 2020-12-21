@@ -7,8 +7,8 @@ package generators.unicode.ranges.writers
 
 import java.io.FileWriter
 
-internal class WhitespaceRangesWriter {
-    fun write(rangeStart: List<Int>, rangeEnd: List<Int>, writer: FileWriter) {
+internal class WhitespaceRangesWriter : RangesWriter {
+    override fun write(rangeStart: List<Int>, rangeEnd: List<Int>, rangeCategory: List<Int>, writer: FileWriter) {
         writer.appendLine(isWhitespaceImpl(rangeStart, rangeEnd))
     }
 
