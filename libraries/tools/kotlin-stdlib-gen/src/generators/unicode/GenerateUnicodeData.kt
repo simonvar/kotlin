@@ -5,27 +5,32 @@
 
 package generators.unicode
 
-import generators.unicode.ranges.*
+import generators.unicode.ranges.CharCategoryTestGenerator
+import generators.unicode.ranges.RangesGenerator
 import templates.COPYRIGHT_NOTICE
 import templates.KotlinTarget
 import templates.readCopyrightNoticeFromProfile
 import java.io.File
-import java.io.FileNotFoundException
+import java.net.URL
 import kotlin.system.exitProcess
+
+
+// According to https://www.unicode.org/standard/versions/ the latest versions of all of the Unicode Character Database files are kept in http://www.unicode.org/Public/UCD/latest/
+private const val latestUnicodeDataUrl = "https://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt"
 
 /**
  * This program generates sources related to UnicodeData.txt.
  * There are two ways to run the program.
  * 1. Pass the root directory of the project to generate sources for js and js-ir.
  *  _CharCategoryTest.kt and supporting files are also generated to test the generated sources.
- *  The UnicodeData.txt file must be placed in the same directory where this file is localed,
- *  i.e., rootDir/libraries/tools/kotlin-stdlib-gen/src/generators/unicode/
  *  The generated test is meant to be run after updating Unicode version and should not be merged to master.
- * 2. Pass the path to the UnicodeData.txt, name of the target to generate sources for, and the directory to generate sources in.
+ * 2. Pass the name of the target to generate sources for, and the directory to generate sources in.
  *  No tests are generated.
  */
 fun main(args: Array<String>) {
-    val unicodeDataFile: File
+
+    val unicodeDataLines = URL(latestUnicodeDataUrl).openStream().reader().readLines()
+
     val generators = mutableListOf<UnicodeDataGenerator>()
 
     fun addRangesGenerators(generatedDir: File, target: KotlinTarget) {
@@ -43,8 +48,6 @@ fun main(args: Array<String>) {
         1 -> {
             val baseDir = File(args.first())
 
-            unicodeDataFile = baseDir.resolve("libraries/tools/kotlin-stdlib-gen/src/generators/unicode/UnicodeData.txt")
-
             val categoryTestFile = baseDir.resolve("libraries/stdlib/js/test/text/unicodeData/_CharCategoryTest.kt")
             val categoryTestGenerator = CharCategoryTestGenerator(categoryTestFile)
             generators.add(categoryTestGenerator)
@@ -54,11 +57,13 @@ fun main(args: Array<String>) {
 
             val jsIrGeneratedDir = baseDir.resolve("libraries/stdlib/js-ir/src/generated/")
             addRangesGenerators(jsIrGeneratedDir, KotlinTarget.JS_IR)
-        }
-        3 -> {
-            val (unicodeDataPath, targetName, targetDir) = args
 
-            unicodeDataFile = File(unicodeDataPath)
+            // For debugging. To see the file content
+            val unicodeDataFile = baseDir.resolve("libraries/tools/kotlin-stdlib-gen/src/generators/unicode/UnicodeData.txt")
+            unicodeDataFile.writeText(unicodeDataLines.joinToString(separator = "\n"))
+        }
+        2 -> {
+            val (targetName, targetDir) = args
 
             val target = KotlinTarget.values.singleOrNull { it.name.equals(targetName, ignoreCase = true) }
                 ?: error("Invalid target: $targetName")
@@ -76,14 +81,10 @@ fun main(args: Array<String>) {
         }
     }
 
-    if (!unicodeDataFile.exists()) {
-        throw FileNotFoundException("Please place UnicodeData.txt at ${unicodeDataFile.parent}")
-    }
-
     COPYRIGHT_NOTICE =
         readCopyrightNoticeFromProfile { Thread.currentThread().contextClassLoader.getResourceAsStream("apache.xml").reader() }
 
-    unicodeDataFile.forEachLine { line ->
+    unicodeDataLines.forEach { line ->
         val parts = line.split(";")
         if (parts[0].length <= 4) {
             generators.forEach { it.appendChar(parts[0], parts[1], parts[2]) }
