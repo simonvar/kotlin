@@ -143,4 +143,7 @@ public class JVMConfigurationKeys {
 
     public static final CompilerConfigurationKey<Boolean> ENABLE_JVM_PREVIEW =
             CompilerConfigurationKey.create("Enable Java language preview features");
+
+    public static final CompilerConfigurationKey<Boolean> NO_REFLECT =
+            CompilerConfigurationKey.create("no reflect");
 }
