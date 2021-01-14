@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.test.directives
 
+import org.jetbrains.kotlin.config.JvmSamConversions
 import org.jetbrains.kotlin.test.TargetBackend
 import org.jetbrains.kotlin.test.directives.model.SimpleDirectivesContainer
 
@@ -43,4 +44,6 @@ object CodegenTestDirectives : SimpleDirectivesContainer() {
     val IGNORE_FIR_DIAGNOSTICS by directive(
         description = "Run backend even FIR reported some diagnostics with ERROR severity"
     )
+
+    val SAM_CONVERSIONS by enumDirective<JvmSamConversions>("SAM conversion code generation scheme")
 }

@@ -5,16 +5,22 @@
 
 package org.jetbrains.kotlin.test.runners.codegen
 
+import com.intellij.mock.MockProject
+import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.test.Constructor
 import org.jetbrains.kotlin.test.TargetBackend
 import org.jetbrains.kotlin.test.backend.BlackBoxCodegenSuppressor
 import org.jetbrains.kotlin.test.backend.handlers.*
 import org.jetbrains.kotlin.test.builders.TestConfigurationBuilder
+import org.jetbrains.kotlin.test.directives.CodegenTestDirectives
 import org.jetbrains.kotlin.test.directives.CodegenTestDirectives.RUN_DEX_CHECKER
 import org.jetbrains.kotlin.test.directives.JvmEnvironmentConfigurationDirectives.USE_PSI_CLASS_FILES_READING
 import org.jetbrains.kotlin.test.model.*
 import org.jetbrains.kotlin.test.runners.AbstractKotlinCompilerWithTargetBackendTest
+import org.jetbrains.kotlin.test.services.EnvironmentConfigurator
+import org.jetbrains.kotlin.test.services.TestServices
 import org.jetbrains.kotlin.test.services.configuration.CommonEnvironmentConfigurator
 import org.jetbrains.kotlin.test.services.configuration.JvmEnvironmentConfigurator
 import org.jetbrains.kotlin.test.services.sourceProviders.AdditionalDiagnosticsSourceFilesProvider
@@ -43,7 +49,8 @@ abstract class AbstractJvmBlackBoxCodegenTestBase<R : ResultingArtifact.Frontend
 
         useConfigurators(
             ::CommonEnvironmentConfigurator,
-            ::JvmEnvironmentConfigurator
+            ::JvmEnvironmentConfigurator,
+            ::JvmCodegenEnvironmentConfigurator
         )
 
         useAdditionalSourceProviders(
@@ -69,5 +76,16 @@ abstract class AbstractJvmBlackBoxCodegenTestBase<R : ResultingArtifact.Frontend
         )
 
         useAfterAnalysisCheckers(::BlackBoxCodegenSuppressor)
+    }
+}
+
+// This class configures various JVM-specific codegen minutiae.
+// Ideally, test directives could take care of such things themselves.
+class JvmCodegenEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
+    override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule, project: MockProject) {
+        val samConversions = module.directives[CodegenTestDirectives.SAM_CONVERSIONS].lastOrNull()
+        if (samConversions != null) {
+            configuration.put(JVMConfigurationKeys.SAM_CONVERSIONS, samConversions)
+        }
     }
 }
