@@ -1,5 +1,9 @@
 package noReflect
 
 fun main() {
-    String::class.annotations
+    try {
+        String::class.annotations
+    } catch (e: KotlinReflectionNotSupportedError) {
+        println("KotlinReflectionNotSupportedError has been caught")
+    }
 }

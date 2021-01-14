@@ -1,8 +1,4 @@
-ERR:
-Exception in thread "main" kotlin.jvm.KotlinReflectionNotSupportedError: Kotlin reflection implementation is not found at runtime. Make sure you have kotlin-reflect.jar in the classpath
-	at kotlin.jvm.internal.ClassReference.error(ClassReference.kt:84)
-	at kotlin.jvm.internal.ClassReference.getAnnotations(ClassReference.kt:27)
-	at noReflect.NoReflectKt.main(noReflect.kt:4)
-	at noReflect.NoReflectKt.main(noReflect.kt)
+OUT:
+KotlinReflectionNotSupportedError has been caught
 
-Return code: 1
+Return code: 0
