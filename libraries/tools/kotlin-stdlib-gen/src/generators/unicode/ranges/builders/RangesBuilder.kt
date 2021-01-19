@@ -9,26 +9,36 @@ import generators.unicode.ranges.patterns.PeriodicRangePattern
 import generators.unicode.ranges.patterns.RangePattern
 import generators.unicode.ranges.patterns.rangeLength
 
+/**
+ * The base class of character ranges builders.
+ */
 internal abstract class RangesBuilder {
     private val ranges = mutableListOf<RangePattern>()
+    private var lastAppendedCharCode = -1
 
-    open fun append(char: String, name: String, categoryCode: String) {
+    /**
+     * Appends a line from the UnicodeData.txt file.
+     */
+    fun append(char: String, name: String, categoryCode: String) {
         val charCode = char.toInt(radix = 16)
         val categoryId = categoryId(categoryCode)
 
-        if (name.endsWith(", First>")) {
-            rangeFirst(charCode, categoryId)
-            return
+        when {
+            name.endsWith(", First>") -> rangeFirst(charCode, categoryId)
+            name.endsWith(", Last>") -> rangeLast(charCode, categoryId)
+            else -> append(charCode, categoryId)
         }
-        if (name.endsWith(", Last>")) {
-            rangeLast(charCode, categoryId)
-            return
-        }
-        append(charCode, categoryId)
+
+        lastAppendedCharCode = charCode
     }
 
+    /**
+     * Optimizes the number of ranges and returns them.
+     *
+     * Returns a [Triple] containing lists of range starts, ends and categories in that particular order.
+     */
     fun build(): Triple<List<Int>, List<Int>, List<Int>> {
-        for (code in ranges.last().rangeEnd() + 1..0xffff) {
+        for (code in lastAppendedCharCode + 1..0xffff) {
             appendSingleChar(code, unassignedCategoryId)
         }
 
@@ -51,9 +61,9 @@ internal abstract class RangesBuilder {
             }
         }
 
-        if (this is LetterRangesBuilder) {
-            println(ranges.joinToString(separator = "\n"))
-        }
+//        if (this is LetterRangesBuilder) {
+//            println(ranges.joinToString(separator = "\n"))
+//        }
 
 //        if (this is CharCategoryRangesBuilder) {
 //            println(ranges.subList(fromIndex = 0, toIndex = 10).joinToString(separator = "\n"))
@@ -62,30 +72,43 @@ internal abstract class RangesBuilder {
         return Triple(ranges.map { it.rangeStart() }, ranges.map { it.rangeEnd() }, ranges.map { it.category() })
     }
 
+    /**
+     * Appends the [charCode] as the start of a range of chars with the specified [categoryId].
+     */
     private fun rangeFirst(charCode: Int, categoryId: String) {
         append(charCode, categoryId)
     }
 
+    /**
+     * Appends the [charCode] as the end of a range of chars with the specified [categoryId].
+     * Chars between last appended char and the [charCode] are considered to have the specified [categoryId].
+     */
     private fun rangeLast(charCode: Int, categoryId: String) {
-        if (shouldSkip(categoryId)) return
+        if (!shouldSkip(categoryId)) {
+            check(ranges.last().rangeEnd() == lastAppendedCharCode)
+            check(ranges.last().categoryIdOf(lastAppendedCharCode) == categoryId)
+        }
 
-        val lastChar = ranges.last().rangeEnd() // must be non-empty
-
-        check(ranges.last().categoryIdOf(lastChar) == categoryId)
-
-        for (code in lastChar + 1..charCode) {
+        for (code in lastAppendedCharCode + 1..charCode) {
             appendSingleChar(code, categoryId)
         }
     }
 
+    /**
+     * Appends the [charCode] with the specified [categoryId].
+     * Chars between last appended char and the [charCode] are considered to be unassigned.
+     */
     private fun append(charCode: Int, categoryId: String) {
-        val lastChar = ranges.lastOrNull()?.rangeEnd() ?: -1
-        for (code in lastChar + 1 until charCode) {
+        for (code in lastAppendedCharCode + 1 until charCode) {
             appendSingleChar(code, unassignedCategoryId)
         }
         appendSingleChar(charCode, categoryId)
     }
 
+    /**
+     * Appends the [charCode] with the specified [categoryId] to the last range, or a new range containing the [charCode] is created.
+     * The last range can be transformed to another range type to accommodate the [charCode].
+     */
     private fun appendSingleChar(charCode: Int, categoryId: String) {
         if (shouldSkip(categoryId)) return
 
@@ -106,18 +129,24 @@ internal abstract class RangesBuilder {
         }
     }
 
+    /**
+     * Category id used for unassigned chars.
+     */
     protected val unassignedCategoryId: String
         get() = categoryId(CharCategory.UNASSIGNED.code)
 
 
+    /**
+     * Creates the simplest range containing the single [charCode].
+     */
     private fun createRange(charCode: Int, categoryId: String): RangePattern {
         return PeriodicRangePattern.from(charCode, categoryId, sequenceLength = 1, isPeriodic = true, unassignedCategoryId, makeOnePeriodCategory)
     }
 
     /**
-     * Removes the last char in the specified range.
-     * Returns the simplest pattern that accommodated the remaining chars in the range,
-     * or `null` if the range contained a single char.
+     * Removes the last char in the specified [range].
+     * Returns the simplest pattern that accommodated the remaining chars in the [range],
+     * or `null` if the [range] contained a single char.
      */
     private fun removeLast(range: RangePattern): RangePattern? {
         if (range.rangeLength() == 1) {
@@ -125,7 +154,7 @@ internal abstract class RangesBuilder {
         }
 
         val rangeStart = range.rangeStart()
-        var result: RangePattern = createRange(rangeStart, range.categoryIdOf(rangeStart))
+        var result = createRange(rangeStart, range.categoryIdOf(rangeStart))
         for (code in rangeStart + 1 until range.rangeEnd()) {
             val categoryId = range.categoryIdOf(code)
             if (!shouldSkip(categoryId)) {
@@ -135,12 +164,26 @@ internal abstract class RangesBuilder {
         return result
     }
 
+    /**
+     * The id to use for the [categoryCode] - the Unicode general category code.
+     */
     protected abstract fun categoryId(categoryCode: String): String
 
+    /**
+     * Returns true if this range builder skips chars with the specified [categoryId].
+     */
     protected abstract fun shouldSkip(categoryId: String): Boolean
 
+    /**
+     * The function to use to transform periodic ranges with period equal to 1 to an Int representation.
+     */
     protected abstract val makeOnePeriodCategory: (Array<String>) -> Int
 
+    /**
+     * Appends the [charCode] with the specified [categoryId] to the [lastRange] and returns the resulting range,
+     * or returns `null` if [charCode] can't be appended to the [lastRange].
+     * The [lastRange] can be transformed to another range type to accommodate the [charCode].
+     */
     protected abstract fun evolveLastRange(
         lastRange: RangePattern,
         charCode: Int,

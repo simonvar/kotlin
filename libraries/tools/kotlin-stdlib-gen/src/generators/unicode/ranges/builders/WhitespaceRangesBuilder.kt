@@ -18,11 +18,11 @@ internal class WhitespaceRangesBuilder : RangesBuilder() {
     }
 
     override fun categoryId(categoryCode: String): String {
-        return if (categoryCode in whitespaceCategories) WS else categoryCode
+        return if (categoryCode == WS || categoryCode in whitespaceCategories) WS else NOT_WS
     }
 
     override fun shouldSkip(categoryId: String): Boolean {
-        return categoryId != WS
+        return categoryId == NOT_WS
     }
 
     override val makeOnePeriodCategory: (Array<String>) -> Int
@@ -34,6 +34,7 @@ internal class WhitespaceRangesBuilder : RangesBuilder() {
 }
 
 private const val WS = "WS"
+private const val NOT_WS = "NOT_WS"
 
 private val whitespaceCategories = listOf(
     CharCategory.SPACE_SEPARATOR.code,

@@ -50,6 +50,8 @@ internal fun List<Int>.toVarLenBase64(): String {
 }
 
 private fun Int.to6Bits(): List<Int> {
+    require(this >= 0)
+
     val result = mutableListOf<Int>()
 
     var value = this
