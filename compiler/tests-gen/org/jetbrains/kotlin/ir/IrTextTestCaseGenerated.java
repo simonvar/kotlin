@@ -1882,6 +1882,11 @@ public class IrTextTestCaseGenerated extends AbstractIrTextTestCase {
             runTest("compiler/testData/ir/irText/firProblems/SignatureClash.kt");
         }
 
+        @TestMetadata("SimpleTypeMarker.kt")
+        public void testSimpleTypeMarker() throws Exception {
+            runTest("compiler/testData/ir/irText/firProblems/SimpleTypeMarker.kt");
+        }
+
         @TestMetadata("SyntheticSetterType.kt")
         public void testSyntheticSetterType() throws Exception {
             runTest("compiler/testData/ir/irText/firProblems/SyntheticSetterType.kt");
