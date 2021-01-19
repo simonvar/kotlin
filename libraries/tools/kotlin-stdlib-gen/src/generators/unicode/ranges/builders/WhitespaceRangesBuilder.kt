@@ -5,7 +5,7 @@
 
 package generators.unicode.ranges.builders
 
-import generators.unicode.ranges.patterns.CategorizedRangePattern
+import generators.unicode.ranges.patterns.RangePattern
 
 internal class WhitespaceRangesBuilder : RangesBuilder() {
 
@@ -28,7 +28,7 @@ internal class WhitespaceRangesBuilder : RangesBuilder() {
     override val makeOnePeriodCategory: (Array<String>) -> Int
         get() = { 0 }
 
-    override fun evolveLastRange(lastRange: CategorizedRangePattern, charCode: Int, categoryId: String): CategorizedRangePattern? {
+    override fun evolveLastRange(lastRange: RangePattern, charCode: Int, categoryId: String): RangePattern? {
         return null
     }
 }

@@ -5,12 +5,12 @@
 
 package generators.unicode.ranges.builders
 
-import generators.unicode.ranges.patterns.CategorizedPeriodicPattern
-import generators.unicode.ranges.patterns.CategorizedRangePattern
+import generators.unicode.ranges.patterns.PeriodicRangePattern
+import generators.unicode.ranges.patterns.RangePattern
 import generators.unicode.ranges.patterns.rangeLength
 
 internal abstract class RangesBuilder {
-    private val ranges = mutableListOf<CategorizedRangePattern>()
+    private val ranges = mutableListOf<RangePattern>()
 
     open fun append(char: String, name: String, categoryCode: String) {
         val charCode = char.toInt(radix = 16)
@@ -110,8 +110,8 @@ internal abstract class RangesBuilder {
         get() = categoryId(CharCategory.UNASSIGNED.code)
 
 
-    private fun createRange(charCode: Int, categoryId: String): CategorizedRangePattern {
-        return CategorizedPeriodicPattern.from(charCode, categoryId, sequenceLength = 1, isPeriodic = true, unassignedCategoryId, makeOnePeriodCategory)
+    private fun createRange(charCode: Int, categoryId: String): RangePattern {
+        return PeriodicRangePattern.from(charCode, categoryId, sequenceLength = 1, isPeriodic = true, unassignedCategoryId, makeOnePeriodCategory)
     }
 
     /**
@@ -119,13 +119,13 @@ internal abstract class RangesBuilder {
      * Returns the simplest pattern that accommodated the remaining chars in the range,
      * or `null` if the range contained a single char.
      */
-    private fun removeLast(range: CategorizedRangePattern): CategorizedRangePattern? {
+    private fun removeLast(range: RangePattern): RangePattern? {
         if (range.rangeLength() == 1) {
             return null
         }
 
         val rangeStart = range.rangeStart()
-        var result: CategorizedRangePattern = createRange(rangeStart, range.categoryIdOf(rangeStart))
+        var result: RangePattern = createRange(rangeStart, range.categoryIdOf(rangeStart))
         for (code in rangeStart + 1 until range.rangeEnd()) {
             val categoryId = range.categoryIdOf(code)
             if (!shouldSkip(categoryId)) {
@@ -142,8 +142,8 @@ internal abstract class RangesBuilder {
     protected abstract val makeOnePeriodCategory: (Array<String>) -> Int
 
     protected abstract fun evolveLastRange(
-        lastRange: CategorizedRangePattern,
+        lastRange: RangePattern,
         charCode: Int,
         categoryId: String
-    ): CategorizedRangePattern?
+    ): RangePattern?
 }

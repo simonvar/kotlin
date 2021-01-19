@@ -10,7 +10,7 @@ import generators.unicode.ranges.writers.hex
 /**
  * A range of consequent chars that fit within a particular pattern.
  */
-internal interface CategorizedRangePattern {
+internal interface RangePattern {
     /**
      * Appends the [charCode] to this range pattern.
      * Returns true if the [charCode] with the specified [categoryId] could be accommodated within this pattern.
@@ -47,7 +47,7 @@ internal interface CategorizedRangePattern {
     fun categoryIdOf(charCode: Int): String
 }
 
-internal fun CategorizedRangePattern.rangeLength(): Int = rangeEnd() - rangeStart() + 1
+internal fun RangePattern.rangeLength(): Int = rangeEnd() - rangeStart() + 1
 
 
 /**
@@ -66,14 +66,14 @@ internal fun CategorizedRangePattern.rangeLength(): Int = rangeEnd() - rangeStar
  * @param makeCategory the function used to transform this range to an Int representation that is returned from the [category] function.
  *      [makeCategory] is called with an array having its size equal to `minOf(sequenceLength, rangeLength())`.
  */
-internal class CategorizedPeriodicPattern private constructor(
+internal class PeriodicRangePattern private constructor(
     charCode: Int,
     categoryId: String,
     val sequenceLength: Int,
     isPeriodic: Boolean,
     unassignedCategoryId: String,
     private val makeCategory: (Array<String>) -> Int
-) : CategorizedRangePattern {
+) : RangePattern {
     private var start: Int = charCode
     private var end: Int = charCode
     private val bag: Bag = Bag(sequenceLength, isPeriodic, unassignedCategoryId)
@@ -127,7 +127,7 @@ internal class CategorizedPeriodicPattern private constructor(
     }
 
     override fun toString(): String {
-        return "CategorizedPeriodicPattern{" +
+        return "PeriodicRangePattern{" +
                 "start=" + start.hex() +
                 ", end=" + end.hex() +
                 ", length=" + rangeLength() +
@@ -138,14 +138,14 @@ internal class CategorizedPeriodicPattern private constructor(
 
     companion object {
         fun from(
-            range: CategorizedRangePattern,
+            range: RangePattern,
             charCode: Int,
             categoryId: String,
             sequenceLength: Int,
             isPeriodic: Boolean,
             unassignedCategoryId: String,
             makeCategory: (Array<String>) -> Int
-        ): CategorizedPeriodicPattern? {
+        ): PeriodicRangePattern? {
             require(charCode > range.rangeEnd())
 
             val start = range.rangeStart()
@@ -163,8 +163,8 @@ internal class CategorizedPeriodicPattern private constructor(
             isPeriodic: Boolean,
             unassignedCategoryId: String,
             makeCategory: (Array<String>) -> Int
-        ): CategorizedPeriodicPattern {
-            return CategorizedPeriodicPattern(charCode, categoryId, sequenceLength, isPeriodic, unassignedCategoryId, makeCategory)
+        ): PeriodicRangePattern {
+            return PeriodicRangePattern(charCode, categoryId, sequenceLength, isPeriodic, unassignedCategoryId, makeCategory)
         }
     }
 }
@@ -254,7 +254,7 @@ internal class GapRangePattern private constructor(
     private val categoryId: String,
     private val unassignedCategoryId: String,
     private val makeCategory: (start: Int, end: Int, gaps: List<Gap>) -> Int
-) : CategorizedRangePattern {
+) : RangePattern {
     private val start: Int = charCode
     private var end: Int = charCode
     private val gaps = mutableListOf<Gap>()
@@ -342,12 +342,12 @@ internal class GapRangePattern private constructor(
         internal data class Gap(val start: Int, val length: Int)
 
         fun from(
-            range: CategorizedRangePattern,
+            range: RangePattern,
             charCode: Int,
             categoryId: String,
             unassignedCategoryId: String,
             makeCategory: (start: Int, end: Int, gaps: List<Gap>) -> Int
-        ): CategorizedRangePattern? {
+        ): RangePattern? {
             val start = range.rangeStart()
             val startCategoryId = range.categoryIdOf(start)
 
@@ -369,7 +369,7 @@ internal class GapRangePattern private constructor(
 }
 
 
-private fun CategorizedRangePattern.append(rangeStart: Int, rangeEnd: Int, categoryIdOf: (Int) -> String, charCode: Int, categoryId: String): Boolean {
+private fun RangePattern.append(rangeStart: Int, rangeEnd: Int, categoryIdOf: (Int) -> String, charCode: Int, categoryId: String): Boolean {
     for (code in rangeStart..rangeEnd) {
         if (!append(code, categoryIdOf(code))) {
             return false

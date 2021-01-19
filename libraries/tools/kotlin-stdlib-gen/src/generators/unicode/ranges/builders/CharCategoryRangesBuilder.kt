@@ -5,8 +5,8 @@
 
 package generators.unicode.ranges.builders
 
-import generators.unicode.ranges.patterns.CategorizedPeriodicPattern
-import generators.unicode.ranges.patterns.CategorizedRangePattern
+import generators.unicode.ranges.patterns.PeriodicRangePattern
+import generators.unicode.ranges.patterns.RangePattern
 
 internal class CharCategoryRangesBuilder : RangesBuilder() {
 
@@ -21,12 +21,12 @@ internal class CharCategoryRangesBuilder : RangesBuilder() {
     override val makeOnePeriodCategory: (Array<String>) -> Int
         get() = ::periodPatternCategory
 
-    override fun evolveLastRange(lastRange: CategorizedRangePattern, charCode: Int, categoryId: String): CategorizedRangePattern? {
-        require(lastRange is CategorizedPeriodicPattern)
+    override fun evolveLastRange(lastRange: RangePattern, charCode: Int, categoryId: String): RangePattern? {
+        require(lastRange is PeriodicRangePattern)
         return when (lastRange.sequenceLength) {
-            1 -> CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 2, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
-                ?: CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 3, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
-            2 -> CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 3, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
+            1 -> PeriodicRangePattern.from(lastRange, charCode, categoryId, sequenceLength = 2, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
+                ?: PeriodicRangePattern.from(lastRange, charCode, categoryId, sequenceLength = 3, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
+            2 -> PeriodicRangePattern.from(lastRange, charCode, categoryId, sequenceLength = 3, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
             else -> null
         }
     }

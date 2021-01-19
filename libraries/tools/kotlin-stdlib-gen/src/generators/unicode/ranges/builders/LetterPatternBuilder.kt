@@ -5,8 +5,8 @@
 
 package generators.unicode.ranges.builders
 
-import generators.unicode.ranges.patterns.CategorizedPeriodicPattern
-import generators.unicode.ranges.patterns.CategorizedRangePattern
+import generators.unicode.ranges.patterns.PeriodicRangePattern
+import generators.unicode.ranges.patterns.RangePattern
 import generators.unicode.ranges.patterns.GapRangePattern
 
 internal class LetterRangesBuilder : RangesBuilder() {
@@ -25,20 +25,20 @@ internal class LetterRangesBuilder : RangesBuilder() {
     override val makeOnePeriodCategory: (Array<String>) -> Int
         get() = ::periodPatternCategory
 
-    override fun evolveLastRange(lastRange: CategorizedRangePattern, charCode: Int, categoryId: String): CategorizedRangePattern? {
+    override fun evolveLastRange(lastRange: RangePattern, charCode: Int, categoryId: String): RangePattern? {
         return when (lastRange) {
-            is CategorizedPeriodicPattern -> when (lastRange.sequenceLength) {
+            is PeriodicRangePattern -> when (lastRange.sequenceLength) {
                 1 ->
-                    CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 2, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
+                    PeriodicRangePattern.from(lastRange, charCode, categoryId, sequenceLength = 2, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
                         ?: GapRangePattern.from(lastRange, charCode, categoryId, unassignedCategoryId, ::gapPatternCategory)
-                        ?: CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
+                        ?: PeriodicRangePattern.from(lastRange, charCode, categoryId, sequenceLength = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
                 2 ->
                     GapRangePattern.from(lastRange, charCode, categoryId, unassignedCategoryId, ::gapPatternCategory)
-                        ?: CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
+                        ?: PeriodicRangePattern.from(lastRange, charCode, categoryId, sequenceLength = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
                 else -> null
             }
             is GapRangePattern ->
-                CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
+                PeriodicRangePattern.from(lastRange, charCode, categoryId, sequenceLength = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
             else ->
                 error("Unreachable")
         }
