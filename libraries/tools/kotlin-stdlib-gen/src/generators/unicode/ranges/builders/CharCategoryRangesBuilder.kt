@@ -23,10 +23,10 @@ internal class CharCategoryRangesBuilder : RangesBuilder() {
 
     override fun evolveLastRange(lastRange: CategorizedRangePattern, charCode: Int, categoryId: String): CategorizedRangePattern? {
         require(lastRange is CategorizedPeriodicPattern)
-        return when (lastRange.period) {
-            1 -> CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, period = 2, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
-                ?: CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, period = 3, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
-            2 -> CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, period = 3, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
+        return when (lastRange.sequenceLength) {
+            1 -> CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 2, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
+                ?: CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 3, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
+            2 -> CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 3, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
             else -> null
         }
     }

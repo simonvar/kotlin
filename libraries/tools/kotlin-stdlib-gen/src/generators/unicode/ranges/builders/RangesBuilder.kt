@@ -7,9 +7,7 @@ package generators.unicode.ranges.builders
 
 import generators.unicode.ranges.patterns.CategorizedPeriodicPattern
 import generators.unicode.ranges.patterns.CategorizedRangePattern
-import generators.unicode.ranges.patterns.GapRangePattern
 import generators.unicode.ranges.patterns.rangeLength
-import generators.unicode.ranges.writers.CategoryRangesWriter
 
 internal abstract class RangesBuilder {
     private val ranges = mutableListOf<CategorizedRangePattern>()
@@ -113,7 +111,7 @@ internal abstract class RangesBuilder {
 
 
     private fun createRange(charCode: Int, categoryId: String): CategorizedRangePattern {
-        return CategorizedPeriodicPattern.from(charCode, categoryId, period = 1, isPeriodic = true, unassignedCategoryId, makeOnePeriodCategory)
+        return CategorizedPeriodicPattern.from(charCode, categoryId, sequenceLength = 1, isPeriodic = true, unassignedCategoryId, makeOnePeriodCategory)
     }
 
     /**

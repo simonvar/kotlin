@@ -27,18 +27,18 @@ internal class LetterRangesBuilder : RangesBuilder() {
 
     override fun evolveLastRange(lastRange: CategorizedRangePattern, charCode: Int, categoryId: String): CategorizedRangePattern? {
         return when (lastRange) {
-            is CategorizedPeriodicPattern -> when (lastRange.period) {
+            is CategorizedPeriodicPattern -> when (lastRange.sequenceLength) {
                 1 ->
-                    CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, period = 2, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
+                    CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 2, isPeriodic = true, unassignedCategoryId, ::periodPatternCategory)
                         ?: GapRangePattern.from(lastRange, charCode, categoryId, unassignedCategoryId, ::gapPatternCategory)
-                        ?: CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, period = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
+                        ?: CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
                 2 ->
                     GapRangePattern.from(lastRange, charCode, categoryId, unassignedCategoryId, ::gapPatternCategory)
-                        ?: CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, period = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
+                        ?: CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
                 else -> null
             }
             is GapRangePattern ->
-                CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, period = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
+                CategorizedPeriodicPattern.from(lastRange, charCode, categoryId, sequenceLength = 15, isPeriodic = false, unassignedCategoryId, ::periodPatternCategory)
             else ->
                 error("Unreachable")
         }
@@ -73,13 +73,15 @@ private fun periodPatternCategory(categoryIds: Array<String>): Int {
     return pattern
 }
 
-private fun gapPatternCategory(beforeGapLength: List<Int>, gapLength: List<Int>): Int {
+private fun gapPatternCategory(start: Int, end: Int, gaps: List<GapRangePattern.Companion.Gap>): Int {
     var pattern = 0
     var shift = 2
-    for (i in beforeGapLength.indices) {
-        pattern += beforeGapLength[i] shl shift
+    for (i in gaps.indices) {
+        val gap = gaps[i]
+        val charsBeforeGap = gap.start - if (i == 0) start else gaps[i - 1].let { it.start + it.length }
+        pattern += charsBeforeGap shl shift
         shift += GapRangePattern.CHARS_BITS
-        pattern += gapLength[i] shl shift
+        pattern += gap.length shl shift
         shift += GapRangePattern.GAP_BITS
     }
     check(pattern and 0x3 == 0)

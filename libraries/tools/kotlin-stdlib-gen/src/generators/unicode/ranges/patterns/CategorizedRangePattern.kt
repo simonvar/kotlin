@@ -13,18 +13,15 @@ import generators.unicode.ranges.writers.hex
 internal interface CategorizedRangePattern {
     /**
      * Appends the [charCode] to this range pattern.
-     * Returns this instance if the [charCode] with the specified [categoryCode] could be accommodated within this pattern,
-     * or a new pattern containing all chars in this pattern and the [charCode],
-     * or `null` if no pattern could accommodate all chars in this pattern along with [charCode].
+     * Returns true if the [charCode] with the specified [categoryCode] could be accommodated within this pattern.
+     * Returns false otherwise.
      */
     fun append(charCode: Int, categoryCode: String): Boolean
 
     /**
      * Prepends the [charCode] to this range pattern.
-     * Returns this instance if the [charCode] with the specified [categoryCode] could be accommodated within this pattern,
-     * or `null` if [charCode] doesn't fit this range.
-     *
-     * Note that unlike the [append] function, this function doesn't create a new pattern.
+     * Returns true if the [charCode] with the specified [categoryCode] could be accommodated within this pattern.
+     * Returns false otherwise.
      */
     fun prepend(charCode: Int, categoryCode: String): Boolean
 
@@ -54,15 +51,36 @@ internal fun CategorizedRangePattern.rangeLength(): Int = rangeEnd() - rangeStar
 
 
 /**
- * A range of consequent chars having three periodic categories, e.g., [Lu, Ll, Lo, Lu, ...].
+ * A range of consequent chars.
+ *
+ * The chars in the range may have periodic categories, e.g., [Lu, Ll, Lu, Ll, ...].
+ *
+ * @param charCode the start of this range
+ * @param categoryCode the category code of the char with the specified [charCode]
+ * @param sequenceLength the maximum length this range can have.
+ *      If [isPeriodic] is true than this range can be longer with:
+ *      for every `charCode >= start + sequenceLength` categoryCodeOf(charCode) is equal to categoryCodeOf(charCode - sequenceLength)
+ * @param isPeriodic true if this range is a periodic range with period [sequenceLength]
+ * @param unassignedCategoryCode the categoryCode of the unassigned chars.
+ *      Chars that are not appended or prepended are considered to be unassigned
+ * @param makeCategory the function used to transform this range to an Int representation that is returned from the [category] function.
+ *      [makeCategory] is called with an array having its size equal to `minOf(sequenceLength, rangeLength())`.
  */
 internal class CategorizedPeriodicPattern private constructor(
-    private var start: Int,
-    private var end: Int,
-    private val bag: Bag,
+    charCode: Int,
+    categoryCode: String,
+    val sequenceLength: Int,
+    isPeriodic: Boolean,
+    unassignedCategoryCode: String,
     private val makeCategory: (Array<String>) -> Int
 ) : CategorizedRangePattern {
-    val period: Int get() = bag.period
+    private var start: Int = charCode
+    private var end: Int = charCode
+    private val bag: Bag = Bag(sequenceLength, isPeriodic, unassignedCategoryCode)
+
+    init {
+        bag.fill(charCode, categoryCode)
+    }
 
     override fun append(charCode: Int, categoryCode: String): Boolean {
         require(charCode > end)
@@ -95,12 +113,8 @@ internal class CategorizedPeriodicPattern private constructor(
     }
 
     private fun orderedCategoryCodes(): Array<String> {
-        val size = minOf(period, rangeLength())
-        val ordered = Array(size) { bag.unassignedCategoryCode }
-        for (i in 0 until size) {
-            ordered[i] = categoryCodeOf(start + i)
-        }
-        return ordered;
+        val size = minOf(sequenceLength, rangeLength())
+        return Array(size) { categoryCodeOf(start + it) }
     }
 
     override fun categoryCodeOf(charCode: Int): String {
@@ -108,7 +122,7 @@ internal class CategorizedPeriodicPattern private constructor(
             throw IllegalArgumentException("Char code ${charCode.hex()} is not in $this")
         }
         val categoryCode = bag.categoryCodeOf(charCode)
-        check(categoryCode.isNotEmpty())
+        check(categoryCode != null)
         return categoryCode
     }
 
@@ -127,14 +141,17 @@ internal class CategorizedPeriodicPattern private constructor(
             range: CategorizedRangePattern,
             charCode: Int,
             categoryCode: String,
-            period: Int,
+            sequenceLength: Int,
             isPeriodic: Boolean,
             unassignedCategoryCode: String,
             makeCategory: (Array<String>) -> Int
         ): CategorizedPeriodicPattern? {
-            val bag = Bag(period, isPeriodic, unassignedCategoryCode)
-            if (bag.fill(range, charCode, categoryCode)) {
-                return CategorizedPeriodicPattern(range.rangeStart(), charCode, bag, makeCategory)
+            require(charCode > range.rangeEnd())
+
+            val start = range.rangeStart()
+            val newRange = from(start, range.categoryCodeOf(start), sequenceLength, isPeriodic, unassignedCategoryCode, makeCategory)
+            if (newRange.append(start + 1, range.rangeEnd(), range::categoryCodeOf, charCode, categoryCode)) {
+                return newRange
             }
             return null
         }
@@ -142,44 +159,45 @@ internal class CategorizedPeriodicPattern private constructor(
         fun from(
             charCode: Int,
             categoryCode: String,
-            period: Int,
+            sequenceLength: Int,
             isPeriodic: Boolean,
             unassignedCategoryCode: String,
             makeCategory: (Array<String>) -> Int
         ): CategorizedPeriodicPattern {
-            val bag = Bag(period, isPeriodic, unassignedCategoryCode)
-            check(bag.fill(charCode, categoryCode))
-            return CategorizedPeriodicPattern(charCode, charCode, bag, makeCategory)
+            return CategorizedPeriodicPattern(charCode, categoryCode, sequenceLength, isPeriodic, unassignedCategoryCode, makeCategory)
         }
     }
 }
 
+/**
+ * A set of chars with their corresponding categories.
+ *
+ * Category code of a char with code equal to `charCode` is placed at index `charCode % sequenceLength` of the [categoryCodes].
+ */
 private class Bag(
-    val period: Int,
+    private val sequenceLength: Int,
     private val isPeriodic: Boolean,
     val unassignedCategoryCode: String
 ) {
-    val categoryCodes = Array(period) { "" }
+    private val categoryCodes = arrayOfNulls<String>(sequenceLength)
 
-    fun categoryCodeOf(charCode: Int): String {
-        return categoryCodes[charCode % period]
+    fun categoryCodeOf(charCode: Int): String? {
+        return categoryCodes[charCode % sequenceLength]
     }
 
-    fun fill(range: CategorizedRangePattern, charCode: Int, categoryCode: String): Boolean {
-        return fill(range.rangeStart(), range.rangeEnd(), range::categoryCodeOf, charCode, categoryCode)
-    }
-
+    /**
+     * Returns true if a range with the specified [rangeStart], [rangeEnd] and [categoryCodeOf] was successfully added
+     * together with a char with the specified [charCode] and [categoryCode].
+     *
+     * The [charCode] must go immediately after the [rangeEnd] or before the [rangeStart].
+     */
     fun fill(rangeStart: Int, rangeEnd: Int, categoryCodeOf: (Int) -> String, charCode: Int, categoryCode: String): Boolean {
+        require(charCode == rangeStart - 1 || charCode == rangeEnd + 1)
+
         val attempt = categoryCodes.copyOf()
 
         for (ch in rangeStart..rangeEnd) {
             if (!attempt.fill(ch, categoryCodeOf(ch))) return false
-        }
-        for (ch in rangeEnd + 1 until charCode) { // append
-            if (!attempt.fill(ch, unassignedCategoryCode)) return false
-        }
-        for (ch in charCode + 1 until rangeStart) { // prepend
-            if (!attempt.fill(ch, unassignedCategoryCode)) return false
         }
         if (!attempt.fill(charCode, categoryCode)) return false
 
@@ -187,14 +205,22 @@ private class Bag(
         return true
     }
 
+    /**
+     * Returns true if the [charCode] with the [categoryCode] was successfully placed in [categoryCodes].
+     */
     fun fill(charCode: Int, categoryCode: String): Boolean {
         return categoryCodes.fill(charCode, categoryCode)
     }
 
-    private fun Array<String>.fill(charCode: Int, categoryCode: String): Boolean {
-        val index = charCode % period   // place them by distance from start
-        val expected = this[index]
-        if (expected.isEmpty() || (isPeriodic && expected == categoryCode)) {
+    /**
+     * Returns true if the [charCode] with the [categoryCode] was successfully placed in this array.
+     *
+     * The [charCode] is placed at index `charCode % sequenceLength`.
+     */
+    private fun Array<String?>.fill(charCode: Int, categoryCode: String): Boolean {
+        val index = charCode % sequenceLength
+        val current = this[index]
+        if (current == null || (isPeriodic && current == categoryCode)) {
             this[index] = categoryCode
             return true
         }
@@ -203,7 +229,7 @@ private class Bag(
 
     override fun toString(): String {
         return "Bag{" +
-                "period=" + period +
+                "sequenceLength=" + sequenceLength +
                 ", isPeriodic=" + isPeriodic +
                 ", unassignedCategoryCode=" + unassignedCategoryCode +
                 ", categoryCodes=" + categoryCodes.contentToString() +
@@ -213,30 +239,27 @@ private class Bag(
 
 
 /**
- * A range of consequent chars that starts with a letter and ends with a letter, and contains a single consequent not-letter chars range.
+ * A range of consequent chars that starts with a letter and ends with a letter, and contains multiple ranges of consequent not-letter chars.
  *
- * Divide the returned [rangeEnd] int value in 3 parts as follows: 0x7f_ff_ffff
- * The right-hand side part (ffff) is the end of the char range - [end]
- * The middle part (ff) is the length of the gap in the char range - [gapLength]
- * The left-hand side part (7f) is the number of letters before the gap in the char range - [beforeGapLength]
+ * All letter chars in this range have the same category code.
+ *
+ * @param charCode the start of this range
+ * @param categoryCode the category code of the char with the specified [charCode]
+ * @param unassignedCategoryCode the categoryCode of the unassigned chars.
+ *      Chars that are not appended or prepended are considered to be unassigned
+ * @param makeCategory the function used to transform this range to an Int representation that is returned from the [category] function.
  */
 internal class GapRangePattern private constructor(
-    private val start: Int,
-    private var end: Int,
+    charCode: Int,
     private val categoryCode: String,
     private val unassignedCategoryCode: String,
-    private val makeCategory: (List<Int>, List<Int>) -> Int
+    private val makeCategory: (start: Int, end: Int, gaps: List<Gap>) -> Int
 ) : CategorizedRangePattern {
-    private val list = mutableListOf<String>()
-
-    private val beforeGapLength = mutableListOf<Int>()
-    private val gapLength = mutableListOf<Int>()
-    private var charAfterLastGap = end
+    private val start: Int = charCode
+    private var end: Int = charCode
+    private val gaps = mutableListOf<Gap>()
 
     init {
-        repeat(end - start + 1) {
-            list.add(categoryCode)
-        }
         require(categoryCode == "OL")
     }
 
@@ -254,24 +277,16 @@ internal class GapRangePattern private constructor(
         // lll_gap_lll_X_l
         if (end == charCode - 1) {
             // _X_ is empty -> append the letter
-            list.add(categoryCode)
             end = charCode
             return true
         }
 
-        val charsBeforeNewGap = end - charAfterLastGap + 1
-        val newGapLength = charCode - end - 1
-        val bits = (beforeGapLength.size + 1) * (CHARS_BITS + GAP_BITS)
+        val newGap = Gap(start = end + 1, length = charCode - end - 1)
+        val charsBeforeNewGap = newGap.start - if (gaps.isEmpty()) start else gaps.last().let { it.start + it.length }
+        val bits = (gaps.size + 1) * (CHARS_BITS + GAP_BITS)
 
-        if (isValid(charsBeforeNewGap, newGapLength) && bits <= TOTAL_BITS) {
-            repeat(newGapLength) {
-                list.add(unassignedCategoryCode)
-            }
-            list.add(categoryCode)
-
-            beforeGapLength.add(charsBeforeNewGap)
-            gapLength.add(newGapLength)
-            charAfterLastGap = charCode
+        if (isValid(charsBeforeNewGap, newGap.length) && bits <= TOTAL_BITS) {
+            gaps.add(newGap)
             end = charCode
             return true
         }
@@ -293,12 +308,20 @@ internal class GapRangePattern private constructor(
     }
 
     override fun category(): Int {
-        return makeCategory(beforeGapLength, gapLength)
+        return makeCategory(start, end, gaps)
     }
 
     override fun categoryCodeOf(charCode: Int): String {
         require(charCode in start..end)
-        return list[charCode - start]
+        for (gap in gaps) {
+            if (charCode < gap.start) {
+                return categoryCode
+            }
+            if (charCode < gap.start + gap.length) {
+                return unassignedCategoryCode
+            }
+        }
+        return categoryCode
     }
 
     override fun toString(): String {
@@ -306,9 +329,7 @@ internal class GapRangePattern private constructor(
                 "start=" + start.hex() +
                 ", end=" + end.hex() +
                 ", length=" + rangeLength() +
-                ", beforeGapLength=" + beforeGapLength +
-                ", gapLength=" + gapLength +
-                ", charAfterLastGap=" + charAfterLastGap.hex() +
+                ", gaps=" + gaps +
                 ", categoryCode=" + categoryCode +
                 "}"
     }
@@ -318,12 +339,14 @@ internal class GapRangePattern private constructor(
         internal const val GAP_BITS = 7
         private const val TOTAL_BITS = 31
 
+        internal data class Gap(val start: Int, val length: Int)
+
         fun from(
             range: CategorizedRangePattern,
             charCode: Int,
             categoryCode: String,
             unassignedCategoryCode: String,
-            makeCategory: (List<Int>, List<Int>) -> Int
+            makeCategory: (start: Int, end: Int, gaps: List<Gap>) -> Int
         ): CategorizedRangePattern? {
             val start = range.rangeStart()
             val startCategoryCode = range.categoryCodeOf(start)
@@ -332,22 +355,28 @@ internal class GapRangePattern private constructor(
 
             if (startCategoryCode != categoryCode || categoryCode != "OL") return null
 
-            val gapRange = GapRangePattern(start, start, startCategoryCode, unassignedCategoryCode, makeCategory)
-
-            for (ch in start + 1..range.rangeEnd()) {
-                if (!gapRange.append(ch, range.categoryCodeOf(ch))) {
-                    return null
-                }
+            val gapRange = GapRangePattern(start, startCategoryCode, unassignedCategoryCode, makeCategory)
+            if (gapRange.append(start + 1, range.rangeEnd(), range::categoryCodeOf, charCode, categoryCode)) {
+                return gapRange
             }
-            if (!gapRange.append(charCode, categoryCode)) {
-                return null
-            }
-
-            return gapRange
+            return null
         }
 
         private fun isValid(charsBeforeGap: Int, gapLength: Int): Boolean {
             return charsBeforeGap < (1 shl CHARS_BITS) && gapLength < (1 shl GAP_BITS)
         }
     }
+}
+
+
+private fun CategorizedRangePattern.append(rangeStart: Int, rangeEnd: Int, categoryCodeOf: (Int) -> String, charCode: Int, categoryCode: String): Boolean {
+    for (code in rangeStart..rangeEnd) {
+        if (!append(code, categoryCodeOf(code))) {
+            return false
+        }
+    }
+    if (!append(charCode, categoryCode)) {
+        return false
+    }
+    return true
 }
