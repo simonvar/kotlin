@@ -36,7 +36,7 @@ internal abstract class RangesBuilder {
         while (index > 0) {
             val previous = ranges[index - 1]
             val previousEnd = previous.rangeEnd()
-            val previousEndCategory = previous.categoryCodeOf(previousEnd)
+            val previousEndCategory = previous.categoryIdOf(previousEnd)
             val current = ranges[index]
             if (current.prepend(previousEnd, previousEndCategory)) {
                 val newPrevious = removeLast(previous)
@@ -71,7 +71,7 @@ internal abstract class RangesBuilder {
 
         val lastChar = ranges.last().rangeEnd() // must be non-empty
 
-        check(ranges.last().categoryCodeOf(lastChar) == categoryId)
+        check(ranges.last().categoryIdOf(lastChar) == categoryId)
 
         for (code in lastChar + 1..charCode) {
             appendSingleChar(code, categoryId)
@@ -125,9 +125,9 @@ internal abstract class RangesBuilder {
         }
 
         val rangeStart = range.rangeStart()
-        var result: CategorizedRangePattern = createRange(rangeStart, range.categoryCodeOf(rangeStart))
+        var result: CategorizedRangePattern = createRange(rangeStart, range.categoryIdOf(rangeStart))
         for (code in rangeStart + 1 until range.rangeEnd()) {
-            val categoryId = range.categoryCodeOf(code)
+            val categoryId = range.categoryIdOf(code)
             if (!shouldSkip(categoryId)) {
                 result = if (result.append(code, categoryId)) result else evolveLastRange(result, code, categoryId)!!
             }
