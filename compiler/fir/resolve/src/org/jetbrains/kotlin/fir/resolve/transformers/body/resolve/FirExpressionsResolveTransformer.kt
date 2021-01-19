@@ -77,7 +77,7 @@ open class FirExpressionsResolveTransformer(transformer: FirBodyResolveTransform
                 implicitReceiver?.boundSymbol?.let {
                     callee.replaceBoundSymbol(it)
                 }
-                val implicitType = implicitReceiver?.type
+                val implicitType = implicitReceiver?.originalType
                 qualifiedAccessExpression.resultType = when {
                     implicitReceiver is InaccessibleImplicitReceiverValue -> buildErrorTypeRef {
                         source = qualifiedAccessExpression.source
