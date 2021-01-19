@@ -37,7 +37,6 @@ abstract class AbstractJvmBlackBoxCodegenTestBase<R : ResultingArtifact.Frontend
         }
 
         defaultDirectives {
-            +USE_PSI_CLASS_FILES_READING
             +RUN_DEX_CHECKER
         }
 
