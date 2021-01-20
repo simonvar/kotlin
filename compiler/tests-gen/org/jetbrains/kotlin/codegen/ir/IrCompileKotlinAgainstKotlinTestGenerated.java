@@ -456,6 +456,11 @@ public class IrCompileKotlinAgainstKotlinTestGenerated extends AbstractIrCompile
         public void testLibraryProperty() throws Exception {
             runTest("compiler/testData/compileKotlinAgainstKotlin/fir/LibraryProperty.kt");
         }
+
+        @TestMetadata("SuspendExtension.kt")
+        public void testSuspendExtension() throws Exception {
+            runTest("compiler/testData/compileKotlinAgainstKotlin/fir/SuspendExtension.kt");
+        }
     }
 
     @TestMetadata("compiler/testData/compileKotlinAgainstKotlin/jvm8")
