@@ -106,7 +106,7 @@ internal class GapRangePattern private constructor(
     companion object {
         internal const val CHARS_BITS = 7
         internal const val GAP_BITS = 7
-        private const val TOTAL_BITS = 31
+        private const val TOTAL_BITS = 29
 
         internal data class Gap(val start: Int, val length: Int)
 
