@@ -144,7 +144,7 @@ public class CompileEnvironmentUtil {
                 if (e == null) break;
 
                 if ((!FileUtilRt.extensionEquals(e.getName(), "class") &&
-                     !FileUtilRt.extensionEquals(e.getName(), "kotlin_builtins")) ||
+                     !FileUtilRt.extensionEquals(e.getName(), BuiltInSerializerProtocol.BUILTINS_FILE_EXTENSION)) ||
                     StringsKt.substringAfterLast(e.getName(), "/", e.getName()).equals("module-info.class")) {
                     continue;
                 }
