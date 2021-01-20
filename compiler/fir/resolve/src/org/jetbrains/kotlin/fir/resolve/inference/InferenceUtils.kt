@@ -89,7 +89,7 @@ fun ConeKotlinType.suspendFunctionTypeToFunctionType(session: FirSession): ConeC
         if (isKFunctionType(session)) FunctionClassKind.KFunction
         else FunctionClassKind.Function
     val functionalTypeId = ClassId(kind.packageFqName, kind.numberedClassName(typeArguments.size - 1))
-    return ConeClassLikeTypeImpl(ConeClassLikeLookupTagImpl(functionalTypeId), typeArguments, isNullable = false)
+    return ConeClassLikeTypeImpl(ConeClassLikeLookupTagImpl(functionalTypeId), typeArguments, isNullable = false, attributes = attributes)
 }
 
 fun ConeKotlinType.isSubtypeOfFunctionalType(session: FirSession, expectedFunctionalType: ConeClassLikeType): Boolean {
