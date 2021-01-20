@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.fir.FirAnnotationContainer
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertyAccessor
+import org.jetbrains.kotlin.fir.deserialization.CONTINUATION_INTERFACE_CLASS_ID
 import org.jetbrains.kotlin.fir.deserialization.projection
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.FirArgumentList
@@ -26,7 +27,7 @@ import org.jetbrains.kotlin.fir.resolve.calls.varargElementType
 import org.jetbrains.kotlin.fir.resolve.firSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.fullyExpandedType
 import org.jetbrains.kotlin.fir.resolve.inference.isSuspendFunctionType
-import org.jetbrains.kotlin.fir.resolve.inference.suspendFunctionTypeToFunctionType
+import org.jetbrains.kotlin.fir.resolve.inference.suspendFunctionTypeToFunctionTypeWithContinuation
 import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.resolve.transformers.sealedInheritors
 import org.jetbrains.kotlin.fir.serialization.constant.EnumValue
@@ -577,7 +578,9 @@ class FirElementSerializer private constructor(
             }
             is ConeClassLikeType -> {
                 if (type.isSuspendFunctionType(session)) {
-                    val runtimeFunctionType = type.suspendFunctionTypeToFunctionType(session)
+                    val runtimeFunctionType = type.suspendFunctionTypeToFunctionTypeWithContinuation(
+                        session, CONTINUATION_INTERFACE_CLASS_ID
+                    )
                     val functionType = typeProto(runtimeFunctionType)
                     functionType.flags = Flags.getTypeFlags(true)
                     return functionType
