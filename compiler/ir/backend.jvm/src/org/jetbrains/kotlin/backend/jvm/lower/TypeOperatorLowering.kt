@@ -121,16 +121,16 @@ private class TypeOperatorLowering(private val context: JvmBackendContext) : Fil
             putValueArgument(5, irVararg(context.irBuiltIns.anyType, bootstrapMethodArguments))
         }
 
-    private val methodTypeIntrinsic = context.ir.symbols.jvmSubstitutedMethodTypeIntrinsic
-    private val rawMethodTypeIntrinsic = context.ir.symbols.jvmOriginalMethodTypeIntrinsic
+    private val originalMethodTypeIntrinsic = context.ir.symbols.jvmOriginalMethodTypeIntrinsic
+    private val substitutedMethodTypeIntrinsic = context.ir.symbols.jvmSubstitutedMethodTypeIntrinsic
 
     private fun IrBuilderWithScope.jvmOriginalMethodType(methodSymbol: IrFunctionSymbol) =
-        irCall(rawMethodTypeIntrinsic, context.irBuiltIns.anyType).apply {
+        irCall(originalMethodTypeIntrinsic, context.irBuiltIns.anyType).apply {
             putValueArgument(0, irRawFunctionReferefence(context.irBuiltIns.anyType, methodSymbol))
         }
 
     private fun IrBuilderWithScope.jvmSubstitutedMethodType(ownerType: IrType, methodSymbol: IrFunctionSymbol) =
-        irCall(methodTypeIntrinsic, context.irBuiltIns.anyType).apply {
+        irCall(substitutedMethodTypeIntrinsic, context.irBuiltIns.anyType).apply {
             putTypeArgument(0, ownerType)
             putValueArgument(0, irRawFunctionReferefence(context.irBuiltIns.anyType, methodSymbol))
         }
