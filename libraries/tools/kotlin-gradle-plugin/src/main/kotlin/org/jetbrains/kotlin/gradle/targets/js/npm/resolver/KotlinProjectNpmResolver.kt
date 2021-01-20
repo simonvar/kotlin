@@ -40,6 +40,11 @@ internal class KotlinProjectNpmResolver(
         return byCompilation[compilation.name] ?: error("$compilation was not registered in $this")
     }
 
+    operator fun get(compilationName: String): KotlinCompilationNpmResolver {
+//        check(compilation.target.project == project) TODO
+        return byCompilation[compilationName] ?: error("$compilationName was not registered in $this")
+    }
+
     private var closed = false
 
     val compilationResolvers: Collection<KotlinCompilationNpmResolver>
@@ -116,7 +121,7 @@ internal class KotlinProjectNpmResolver(
         return KotlinProjectNpmResolution(
             projectPath,
             byCompilation.values.mapNotNull { it.close() },
-            resolver.nodeJs.taskRequirements?.byTask
+            resolver.nodeJs.taskRequirements.byTask
         )
     }
 }
