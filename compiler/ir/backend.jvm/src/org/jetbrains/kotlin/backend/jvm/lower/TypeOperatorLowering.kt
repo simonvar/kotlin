@@ -121,9 +121,15 @@ private class TypeOperatorLowering(private val context: JvmBackendContext) : Fil
             putValueArgument(5, irVararg(context.irBuiltIns.anyType, bootstrapMethodArguments))
         }
 
-    private val methodTypeIntrinsic = context.ir.symbols.jvmMethodTypeIntrinsic
+    private val methodTypeIntrinsic = context.ir.symbols.jvmSubstitutedMethodTypeIntrinsic
+    private val rawMethodTypeIntrinsic = context.ir.symbols.jvmOriginalMethodTypeIntrinsic
 
-    private fun IrBuilderWithScope.jvmMethodType(ownerType: IrType, methodSymbol: IrFunctionSymbol) =
+    private fun IrBuilderWithScope.jvmOriginalMethodType(methodSymbol: IrFunctionSymbol) =
+        irCall(rawMethodTypeIntrinsic, context.irBuiltIns.anyType).apply {
+            putValueArgument(0, irRawFunctionReferefence(context.irBuiltIns.anyType, methodSymbol))
+        }
+
+    private fun IrBuilderWithScope.jvmSubstitutedMethodType(ownerType: IrType, methodSymbol: IrFunctionSymbol) =
         irCall(methodTypeIntrinsic, context.irBuiltIns.anyType).apply {
             putTypeArgument(0, ownerType)
             putValueArgument(0, irRawFunctionReferefence(context.irBuiltIns.anyType, methodSymbol))
@@ -181,16 +187,15 @@ private class TypeOperatorLowering(private val context: JvmBackendContext) : Fil
             ?: fail("'method' is expected to be 'IrFunctionReference'")
         val funSymbol = irFunRef.symbol
 
-        val erasedSamType = samClassSymbol.defaultType as IrSimpleType
-        val dynamicCall = wrapClosureInDynamicCall(erasedSamType, samMethod, irFunRef)
+        val dynamicCall = wrapClosureInDynamicCall(samType, samMethod, irFunRef)
 
         return context.createJvmIrBuilder(
             funSymbol, // TODO actual symbol for outer scope
             startOffset, endOffset
         ).run {
-            val samMethodType = jvmMethodType(erasedSamType, samMethod.symbol)
+            val samMethodType = jvmOriginalMethodType(samMethod.symbol)
             val irRawFunRef = irRawFunctionReferefence(irFunRef.type, funSymbol)
-            val instanceMethodType = jvmMethodType(samType, samMethod.symbol)
+            val instanceMethodType = jvmSubstitutedMethodType(samType, samMethod.symbol)
 
             jvmInvokeDynamic(
                 dynamicCall,
