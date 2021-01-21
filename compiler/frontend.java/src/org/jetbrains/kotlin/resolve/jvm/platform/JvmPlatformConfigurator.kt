@@ -61,7 +61,7 @@ object JvmPlatformConfigurator : PlatformConfiguratorBase(
     ),
 
     additionalTypeCheckers = listOf(
-        JavaNullabilityChecker(),
+//        JavaNullabilityChecker(),
         RuntimeAssertionsTypeChecker,
         JavaGenericVarianceViolationTypeChecker,
         JavaTypeAccessibilityChecker(),
