@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.gradle
 
 import org.gradle.api.tasks.Exec
+import org.jetbrains.kotlin.reporting.KotlinImportingReport
 import java.io.File
 
 class KotlinSourceSetProto(

@@ -3,9 +3,7 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.jetbrains.kotlin.gradle.org.jetbrains.kotlin.reporting
-
-import org.jetbrains.kotlin.gradle.KotlinImportingReport
+package org.jetbrains.kotlin.reporting
 
 class KotlinImportingReportsContainer {
     val reports = mutableSetOf<KotlinImportingReport>()

@@ -7,7 +7,7 @@ package org.jetbrains.kotlin.gradle
 
 import org.gradle.api.Project
 import org.gradle.api.logging.Logging
-import org.jetbrains.kotlin.gradle.org.jetbrains.kotlin.reporting.KotlinImportingReportsContainer
+import org.jetbrains.kotlin.reporting.KotlinImportingReportsContainer
 import java.lang.Exception
 
 private val logger = Logging.getLogger(KotlinMPPGradleModelBuilder::class.java)

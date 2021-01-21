@@ -23,9 +23,7 @@ import org.jetbrains.kotlin.gradle.GradleImportProperties.*
 import org.jetbrains.kotlin.gradle.KotlinMPPGradleModel.Companion.NO_KOTLIN_NATIVE_HOME
 import org.jetbrains.kotlin.gradle.KotlinSourceSet.Companion.COMMON_MAIN_SOURCE_SET_NAME
 import org.jetbrains.kotlin.gradle.KotlinSourceSet.Companion.COMMON_TEST_SOURCE_SET_NAME
-import org.jetbrains.kotlin.gradle.org.jetbrains.kotlin.reporting.GradleLogErroneousImportingReportVisitor
-import org.jetbrains.kotlin.gradle.org.jetbrains.kotlin.reporting.GradleLogOrphanSourceSetReportVisitor
-import org.jetbrains.kotlin.gradle.org.jetbrains.kotlin.reporting.KotlinImportingReportsContainer
+import org.jetbrains.kotlin.reporting.*
 import org.jetbrains.plugins.gradle.DefaultExternalDependencyId
 import org.jetbrains.plugins.gradle.model.*
 import org.jetbrains.plugins.gradle.tooling.ErrorMessageBuilder
@@ -70,7 +68,6 @@ class KotlinMPPGradleModelBuilder : ModelBuilderService {
         val coroutinesState = getCoroutinesState(project)
         val kotlinNativeHome = KotlinNativeHomeEvaluator.getKotlinNativeHome(project) ?: NO_KOTLIN_NATIVE_HOME
         val sourceSets = filterOrphanSourceSets(importingContext)
-        importingContext.kotlinImportingReports.logReports()
         return KotlinMPPGradleModelImpl(
             sourceSets,
             importingContext.targets,
@@ -91,7 +88,8 @@ class KotlinMPPGradleModelBuilder : ModelBuilderService {
         val (orphanSourceSets, nonOrphanSourceSets) = importingContext.sourceSets.partition { importingContext.isOrphanSourceSet(it) }
 
         orphanSourceSets.forEach {
-            importingContext.kotlinImportingReports += OrphanSourceSetsImportingReport(it.name)
+            OrphanSourceSetsImportingReport(importingContext.project.name, it.name)
+                .addAndProcess(importingContext.kotlinImportingReports, orphanSourceSetReportLogger)
         }
 
         return if (importingContext.getProperty(IMPORT_ORPHAN_SOURCE_SETS)) importingContext.sourceSetsByNames
@@ -146,7 +144,10 @@ class KotlinMPPGradleModelBuilder : ModelBuilderService {
                 @Suppress("UNCHECKED_CAST")
                 return getAndroidSourceSetDependencies?.let { it(resolver, importingContext.project) } as Map<String, List<Any>>?
             } catch (e: Exception) {
-                importingContext.kotlinImportingReports += ErroneousImportingReport("Unexpected exception", e)
+                ErroneousImportingReport("Unexpected exception", e).addAndProcess(
+                    importingContext.kotlinImportingReports,
+                    erroneousImportingReportLogger
+                )
             }
         }
         return null
@@ -692,7 +693,10 @@ class KotlinMPPGradleModelBuilder : ModelBuilderService {
     private fun safelyGetArguments(importingContext: MultiplatformModelImportingContext, compileKotlinTask: Task, accessor: Method?) = try {
         accessor?.invoke(compileKotlinTask) as? List<String>
     } catch (e: Exception) {
-        importingContext.kotlinImportingReports += ErroneousImportingReport(e.message ?: "Unexpected exception: $e", e)
+        ErroneousImportingReport(e.message ?: "Unexpected exception: $e", e).apply {
+            erroneousImportingReportLogger.process(this)
+            importingContext.kotlinImportingReports += this
+        }
         null
     } ?: emptyList()
 
@@ -914,13 +918,9 @@ class KotlinMPPGradleModelBuilder : ModelBuilderService {
 
     companion object {
         private val logger = Logging.getLogger(KotlinMPPGradleModelBuilder::class.java)
+        private val orphanSourceSetReportLogger = GradleLogOrphanSourceSetReportProcessor(logger)
+        private val erroneousImportingReportLogger = GradleLogErroneousImportingReportProcessor(logger)
 
-        private fun KotlinImportingReportsContainer.logReports() {
-            val orphanSourceSetReportVisitor = GradleLogOrphanSourceSetReportVisitor(logger)
-            val erroneousImportingReportVisitor = GradleLogErroneousImportingReportVisitor(logger)
-            this[OrphanSourceSetsImportingReport::class.java].forEach { orphanSourceSetReportVisitor.visit(it) }
-            this[ErroneousImportingReport::class.java].forEach { erroneousImportingReportVisitor.visit(it) }
-        }
 
         fun Project.getTargets(): Collection<Named>? {
             val kotlinExt = project.extensions.findByName("kotlin") ?: return null
