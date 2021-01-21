@@ -12,10 +12,6 @@ class KotlinImportingReportsContainer {
         reports += report
     }
 
-    operator fun plus(report: KotlinImportingReport): KotlinImportingReportsContainer = apply {
-        this += report
-    }
-
     inline operator fun <reified T : KotlinImportingReport> get(vararg reportClasses: Class<out T>): List<T> {
         return reportClasses.flatMap { reports.filterIsInstance(it) }
     }

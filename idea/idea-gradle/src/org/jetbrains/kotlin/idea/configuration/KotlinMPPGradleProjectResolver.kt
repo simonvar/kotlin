@@ -462,7 +462,7 @@ open class KotlinMPPGradleProjectResolver : AbstractProjectResolverExtensionComp
                 kotlinNativeHome = mppModel.kotlinNativeHome
                 coroutines = mppModel.extraFeatures.coroutinesState
                 isHmpp = mppModel.extraFeatures.isHMPPEnabled
-                mppModel.kotlinImportingReports.forEach { kotlinImportingReportsContainer + it }
+                mppModel.kotlinImportingReports.forEach { kotlinImportingReportsContainer += it }
             }
             //TODO improve passing version of used multiplatform
         }
