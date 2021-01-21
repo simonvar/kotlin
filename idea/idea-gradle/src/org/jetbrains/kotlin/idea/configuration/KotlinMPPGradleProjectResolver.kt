@@ -103,7 +103,6 @@ open class KotlinMPPGradleProjectResolver : AbstractProjectResolverExtensionComp
                 nativeDebugAdvertised = true
                 suggestNativeDebug(resolverCtx.projectPath)
             }
-            processKotlinImportingReports(ideModule, resolverCtx.projectPath)
         }
 
         populateContentRoots(gradleModule, ideModule, resolverCtx)
