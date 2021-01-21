@@ -28,7 +28,6 @@ internal fun FileWriter.writeIntArray(
         append(strategy.indentation + string)
     }
 
-    appendLine("${strategy.indentation}// $name.size = ${elements.size}")
     appendWithIndentation("${strategy.rangesVisibilityModifier} val $name = intArrayOf(")
     for (i in elements.indices) {
         if (i % 20 == 0) {
@@ -63,8 +62,6 @@ private fun Int.to6Bits(): List<Int> {
         }
         result.add(fiveBits)
     } while (value != 0)
-
-//    println("$this [${this.toString(radix = 2)}] -> $result")
 
     return result
 }

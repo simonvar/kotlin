@@ -12,9 +12,7 @@ internal class DigitRangesWriter(private val strategy: RangesWritingStrategy) : 
     override fun write(rangeStart: List<Int>, rangeEnd: List<Int>, rangeCategory: List<Int>, writer: FileWriter) {
         // digit ranges always have length equal to 10, so that the difference between the last char code in range and the first one is always 9.
         // Therefore, no need to generate ranges end
-        for (i in rangeStart.indices) {
-            check(rangeEnd[i] - rangeStart[i] == 9)
-        }
+        check(rangeStart.indices.all { rangeEnd[it] - rangeStart[it] == 9 })
 
         strategy.beforeWritingRanges(writer)
         writer.writeIntArray("rangeStart", rangeStart, strategy)

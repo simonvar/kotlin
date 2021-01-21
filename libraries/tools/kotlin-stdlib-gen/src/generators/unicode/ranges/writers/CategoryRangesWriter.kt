@@ -15,9 +15,7 @@ internal open class CategoryRangesWriter(protected val strategy: RangesWritingSt
         beforeWritingRanges(writer)
 
         writeRangeStart(rangeStart, writer)
-        writer.appendLine()
         writeRangeCategory(rangeCategory, writer)
-        writer.appendLine()
         writeInit(rangeStart, rangeEnd, rangeCategory, writer)
 
         afterWritingRanges(writer)
@@ -38,10 +36,12 @@ internal open class CategoryRangesWriter(protected val strategy: RangesWritingSt
 
     protected open fun writeRangeStart(elements: List<Int>, writer: FileWriter) {
         writer.writeIntArray("rangeStart", elements, strategy)
+        writer.appendLine()
     }
 
     protected open fun writeRangeCategory(elements: List<Int>, writer: FileWriter) {
         writer.writeIntArray("rangeCategory", elements, strategy)
+        writer.appendLine()
     }
 
     protected open fun writeInit(rangeStart: List<Int>, rangeEnd: List<Int>, rangeCategory: List<Int>, writer: FileWriter) {}
@@ -106,8 +106,8 @@ internal class VarLenBase64CategoryRangesWriter(strategy: RangesWritingStrategy)
 
         writer.appendLine(
             """
-            internal val decodedRangeStart: IntArray
-            internal val decodedRangeCategory: IntArray
+            val decodedRangeStart: IntArray
+            val decodedRangeCategory: IntArray
             
             init {
                 val toBase64 = "$TO_BASE64"
@@ -116,12 +116,12 @@ internal class VarLenBase64CategoryRangesWriter(strategy: RangesWritingStrategy)
                     fromBase64[toBase64[i].toInt()] = i
                 }
                 
-                // rangeLength.length = ${base64RangeLength.length}
-                val rangeLength = "$base64RangeLength"
-                val length = decodeVarLenBase64(rangeLength, fromBase64, ${rangeLength.size})
-                val start = IntArray(length.size + 1)
-                for (i in length.indices) {
-                    start[i + 1] = start[i] + length[i]
+                // rangeStartDiff.length = ${base64RangeLength.length}
+                val rangeStartDiff = "$base64RangeLength"
+                val diff = decodeVarLenBase64(rangeStartDiff, fromBase64, ${rangeLength.size})
+                val start = IntArray(diff.size + 1)
+                for (i in diff.indices) {
+                    start[i + 1] = start[i] + diff[i]
                 }
                 decodedRangeStart = start
                 

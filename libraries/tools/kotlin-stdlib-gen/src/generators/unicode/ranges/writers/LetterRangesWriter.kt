@@ -153,9 +153,9 @@ internal class VarLenBase64LetterRangesWriter(strategy: RangesWritingStrategy) :
 
         writer.appendLine(
             """
-            internal val decodedRangeStart: IntArray
-            internal val decodedRangeLength: IntArray
-            internal val decodedRangeCategory: IntArray
+            val decodedRangeStart: IntArray
+            val decodedRangeLength: IntArray
+            val decodedRangeCategory: IntArray
             
             init {
                 val toBase64 = "$TO_BASE64"

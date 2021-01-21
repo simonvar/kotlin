@@ -12,9 +12,9 @@ package kotlin.text
 
 // 222 ranges totally
 private object Letter {
-    internal val decodedRangeStart: IntArray
-    internal val decodedRangeLength: IntArray
-    internal val decodedRangeCategory: IntArray
+    val decodedRangeStart: IntArray
+    val decodedRangeLength: IntArray
+    val decodedRangeCategory: IntArray
     
     init {
         val toBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
