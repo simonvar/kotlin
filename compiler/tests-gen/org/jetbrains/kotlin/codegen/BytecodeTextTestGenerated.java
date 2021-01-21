@@ -561,6 +561,11 @@ public class BytecodeTextTestGenerated extends AbstractBytecodeTextTest {
             runTest("compiler/testData/codegen/bytecodeText/boxingOptimization/fold.kt");
         }
 
+        @TestMetadata("hashCodeOnNonNull.kt")
+        public void testHashCodeOnNonNull() throws Exception {
+            runTest("compiler/testData/codegen/bytecodeText/boxingOptimization/hashCodeOnNonNull.kt");
+        }
+
         @TestMetadata("inlineClassesAndInlinedLambda.kt")
         public void testInlineClassesAndInlinedLambda() throws Exception {
             runTest("compiler/testData/codegen/bytecodeText/boxingOptimization/inlineClassesAndInlinedLambda.kt");
@@ -2698,9 +2703,9 @@ public class BytecodeTextTestGenerated extends AbstractBytecodeTextTest {
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/bytecodeText/hashCode"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM, true);
         }
 
-        @TestMetadata("hashCode.kt")
-        public void testHashCode() throws Exception {
-            runTest("compiler/testData/codegen/bytecodeText/hashCode/hashCode.kt");
+        @TestMetadata("hashCode_1_6.kt")
+        public void testHashCode_1_6() throws Exception {
+            runTest("compiler/testData/codegen/bytecodeText/hashCode/hashCode_1_6.kt");
         }
 
         @TestMetadata("interfaceHashCode.kt")
